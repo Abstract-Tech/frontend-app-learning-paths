@@ -6,6 +6,7 @@ import {
   Spinner, Col, Button, Pagination, Icon, IconButton, SearchField, Image, Bubble, Alert,
 } from '@openedx/paragon';
 import { getConfig } from '@edx/frontend-platform';
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { FilterAlt, FilterList, Search } from '@openedx/paragon/icons';
 import { useLearningPaths, useLearnerDashboard, useOrganizations } from './data/queries';
 import LearningPathCard from './LearningPathCard';
@@ -16,6 +17,7 @@ import noResultsSVG from '../assets/no_results.svg';
 
 const Dashboard = () => {
   const { isSmall } = useScreenSize();
+  const { administrator } = getAuthenticatedUser() || {};
 
   const {
     data: learningPaths,
@@ -331,11 +333,18 @@ const Dashboard = () => {
                 </div>
               )}
               <div className="d-flex justify-content-between align-items-center">
-                {!showFilters && !isSmall && (
-                  <Button onClick={() => setShowFilters(true)} variant="primary" className="filter-button border-0">
-                    <Icon src={FilterAlt} /> Filter
-                  </Button>
-                )}
+                <div className="d-flex align-items-center" style={{ gap: '0.5rem' }}>
+                  {!showFilters && !isSmall && (
+                    <Button onClick={() => setShowFilters(true)} variant="primary" className="filter-button border-0">
+                      <Icon src={FilterAlt} /> Filter
+                    </Button>
+                  )}
+                  {administrator && (
+                    <Button as={Link} to="/create" variant="primary" className="border-0">
+                      Create
+                    </Button>
+                  )}
+                </div>
                 <div className="small text-muted">
                   Showing <b>{showingCount}</b> of <b>{totalCount}</b>
                 </div>

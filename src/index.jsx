@@ -17,6 +17,8 @@ import queryClient from './queryClient';
 import Dashboard from './learningpath/Dashboard';
 import LearningPathDetailPage from './learningpath/LearningPathDetails';
 import CourseDetailPage from './learningpath/CourseDetails';
+import CreateLearningPathPage from './learningpath/CreateLearningPath';
+import EditLearningPathPage from './learningpath/EditLearningPath';
 
 import './index.css';
 import './setupConsoleOverride';
@@ -32,6 +34,14 @@ subscribe(APP_READY, () => {
             <Route
               path="/"
               element={<Dashboard />}
+            />
+            <Route
+              path="/create"
+              element={<CreateLearningPathPage />}
+            />
+            <Route
+              path="/edit/:key"
+              element={<EditLearningPathPage />}
             />
             <Route
               path="/learningpath/:key/*"
