@@ -11,6 +11,7 @@ import {
   AccessTimeFilled,
   ChevronLeft,
 } from '@openedx/paragon/icons';
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import {
   useLearningPathDetail, useCoursesByIds, useEnrollLearningPath, useOrganizations,
 } from './data/queries';
@@ -21,6 +22,7 @@ import { useScreenSize } from '../hooks/useScreenSize';
 const LearningPathDetailPage = () => {
   const { isSmall } = useScreenSize();
   const { key } = useParams();
+  const { administrator } = getAuthenticatedUser() || {};
   const [selectedCourseKey, setSelectedCourseKey] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
   const [openCollapsible, setOpenCollapsible] = useState(null);
@@ -256,9 +258,14 @@ const LearningPathDetailPage = () => {
                 </Nav.Item>
               )}
             </Nav>
+            {administrator && (
+              <Link to={`/edit/${key}`} className="ml-auto btn btn-outline-primary rounded-0 px-4 align-self-stretch d-flex align-items-center">
+                Edit
+              </Link>
+            )}
             <Button
               variant="brand"
-              className="ml-auto rounded-0 px-5.5 align-self-stretch"
+              className={`rounded-0 px-5.5 align-self-stretch ${administrator ? '' : 'ml-auto'}`}
               onClick={handleEnrollClick}
               disabled={enrolling || !!enrollmentDate}
             >
