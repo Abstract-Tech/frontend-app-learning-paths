@@ -20,6 +20,7 @@ export const QUERY_KEYS = {
   COURSE_ENROLLMENT_STATUS: (courseId) => ['courseEnrollmentStatus', courseId],
   ORGANIZATIONS: ['organizations'],
   CREDENTIAL_CONFIGURATION: (learningContextKey) => ['credentialConfiguration', learningContextKey],
+  COURSE_SEARCH: (term) => ['courseSearch', term],
 };
 
 // Stale time configurations
@@ -412,3 +413,44 @@ export const useCredentialConfiguration = (learningContextKey) => useQuery({
   enabled: !!learningContextKey,
   staleTime: STALE_TIMES.CREDENTIALS,
 });
+
+export const useCourseSearch = (searchTerm) => useQuery({
+  queryKey: QUERY_KEYS.COURSE_SEARCH(searchTerm),
+  queryFn: () => api.searchCourses(searchTerm),
+  staleTime: STALE_TIMES.COURSES,
+});
+
+export const useCreateLearningPath = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.createLearningPath,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ALL_LEARNING_PATHS });
+    },
+  });
+};
+
+export const useUpdateLearningPath = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ key, payload }) => api.updateLearningPath(key, payload),
+    onSuccess: (_, { key }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ALL_LEARNING_PATHS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LEARNING_PATH_DETAIL(key) });
+    },
+  });
+};
+
+export const useUpdateLearningPathImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ key, file }) => api.uploadLearningPathImage(key, file),
+    onSuccess: (_, { key }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ALL_LEARNING_PATHS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.LEARNING_PATH_DETAIL(key) });
+    },
+  });
+};
