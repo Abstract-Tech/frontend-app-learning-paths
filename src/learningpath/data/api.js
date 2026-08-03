@@ -1,5 +1,5 @@
 import { getAuthenticatedHttpClient, getAuthenticatedUser } from '@edx/frontend-platform/auth';
-import { getConfig, camelCaseObject } from '@edx/frontend-platform';
+import { getConfig, camelCaseObject, snakeCaseObject } from '@edx/frontend-platform';
 
 export async function fetchLearningPaths() {
   const client = getAuthenticatedHttpClient();
@@ -180,6 +180,49 @@ export async function fetchOrganizations() {
     shortName: org.short_name,
     name: org.name,
     logo: org.logo,
+  })));
+}
+
+export async function createLearningPath(payload) {
+  const client = getAuthenticatedHttpClient();
+  const response = await client.post(
+    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/`,
+    snakeCaseObject(payload),
+  );
+  return camelCaseObject(response.data);
+}
+
+export async function updateLearningPath(key, payload) {
+  const client = getAuthenticatedHttpClient();
+  const response = await client.patch(
+    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/${key}/`,
+    snakeCaseObject(payload),
+  );
+  return camelCaseObject(response.data);
+}
+
+export async function uploadLearningPathImage(key, imageFile) {
+  const client = getAuthenticatedHttpClient();
+  const formData = new FormData();
+  formData.append('image', imageFile);
+  const response = await client.patch(
+    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/${key}/`,
+    formData,
+  );
+  return camelCaseObject(response.data);
+}
+
+export async function searchCourses(searchTerm) {
+  const client = getAuthenticatedHttpClient();
+  const response = await client.get(
+    `${getConfig().LMS_BASE_URL}/api/courses/v1/courses/`,
+    { params: { search_term: searchTerm || undefined, page_size: 50 } },
+  );
+  const results = response.data.results || [];
+  return camelCaseObject(results.map((course) => ({
+    id: course.course_id || course.id,
+    name: course.name,
+    org: course.org,
   })));
 }
 
