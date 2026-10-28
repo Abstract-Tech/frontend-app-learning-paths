@@ -15,7 +15,7 @@ const CompletionMessage: React.FC<CompletionMessageProps> = ({ completed }) => (
     </div>
     <div className="course-card-wrapper">
       <div className="completion-message">
-        <div className="font-weight-bold mb-2" style={{ color: 'black', fontSize: '1.375rem', marginTop: '0.125rem' }}>
+        <div className="font-weight-bold mb-2" style={{ color: 'var(--pgn-color-black)', fontSize: '1.375rem', marginTop: '0.125rem' }}>
           Congratulations!
         </div>
         <div className="text-muted">

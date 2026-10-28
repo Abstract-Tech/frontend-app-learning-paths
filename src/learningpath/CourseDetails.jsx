@@ -5,9 +5,8 @@ import {
   Spinner,
   Card,
   Row,
-  Col,
   Icon,
-  ModalCloseButton,
+  IconButton,
   Button,
   Alert,
   Chip,
@@ -25,6 +24,7 @@ import { useCourseDetail, useOrganizations, useCredentialConfiguration } from '.
 import { buildAssetUrl, replaceStaticAssetReferences } from '../util/assetUrl';
 import { buildCourseHomeUrl } from './utils';
 import { useScreenSize } from '../hooks/useScreenSize';
+import './CourseDetails.scss';
 
 const CourseDetailContent = ({
   course,
@@ -70,22 +70,32 @@ const CourseDetailContent = ({
   const hasCertificate = credentialConfig?.hasCredentials;
 
   return (
-    <>
+    <div className={isModalView ? 'course-detail course-detail--modal' : 'course-detail'}>
       <div className="hero">
         {isModalView && (
-          <Row className="p-0 m-0 d-flex align-items-center modal-header justify-content-between">
-            <Col xs={10}>
-              <h4 className="mb-0 pl-4 text-muted font-weight-normal text-truncate">
-                <b>Learning Path:</b> {learningPathTitle}
-              </h4>
-            </Col>
-            <ModalCloseButton variant="tertiary" onClick={handleClose} className="mr-2 rounded-circle">
-              <Icon src={Close} />
-            </ModalCloseButton>
-          </Row>
+          <header className="course-detail__modal-header">
+            <p className="course-detail__modal-path mb-0 text-truncate">
+              <b>Learning Path:</b> {learningPathTitle}
+            </p>
+            <IconButton
+              src={Close}
+              iconAs={Icon}
+              variant="primary"
+              alt="Close course details"
+              onClick={handleClose}
+            />
+          </header>
         )}
-        <Card orientation={isSmall ? 'vertical' : 'horizontal'}>
-          {isSmall && (
+        {isModalView ? (
+          <section className="course-detail__modal-hero">
+            <Chip iconBefore={LmsBook} className="course-chip">COURSE</Chip>
+            <h1 className="course-detail__modal-title">{name}</h1>
+            {/* eslint-disable-next-line react/no-danger */}
+            <div className="course-detail__modal-subtitle text-muted" dangerouslySetInnerHTML={{ __html: shortDescription || 'No description available.' }} />
+          </section>
+        ) : (
+          <Card orientation={isSmall ? 'vertical' : 'horizontal'}>
+            {isSmall && (
             <Card.ImageCap
               src={buildAssetUrl(courseImageAssetPath)}
               srcAlt={`${name} course image`}
@@ -93,33 +103,32 @@ const CourseDetailContent = ({
               logoAlt={`${orgData.name} logo`}
               className="mb-4"
             />
-          )}
-          <Card.Body>
-            {!isModalView && (
-            <Card.Section>
-              <Link to="/" className="d-flex align-items-center back-link pl-4">
-                <Icon src={ChevronLeft} />
-                <span>Go Back</span>
-              </Link>
-            </Card.Section>
             )}
-            <Card.Section className="pl-5 pr-6">
-              <Chip iconBefore={LmsBook} className="course-chip">COURSE</Chip>
-              <h1 className={`my-3 mt-4.5${isSmall ? ' h2' : ''}`}>{name}</h1>
-              {/* eslint-disable-next-line react/no-danger */}
-              <div className="text-muted" dangerouslySetInnerHTML={{ __html: shortDescription || 'No description available.' }} />
-            </Card.Section>
-          </Card.Body>
-          {!isSmall && (
-            <Card.ImageCap
-              src={buildAssetUrl(courseImageAssetPath)}
-              srcAlt={`${name} course image`}
-              logoSrc={orgData.logo}
-              logoAlt={`${orgData.name} logo`}
-            />
-          )}
-        </Card>
-        <Row className="my-4 mx-0 px-5 px-md-6 flex-column flex-md-row align-items-start hero-info course-hero-info">
+            <Card.Body>
+              <Card.Section>
+                <Link to="/" className="d-flex align-items-center back-link pl-4">
+                  <Icon src={ChevronLeft} />
+                  <span>Go Back</span>
+                </Link>
+              </Card.Section>
+              <Card.Section className="pl-5 pr-6">
+                <Chip iconBefore={LmsBook} className="course-chip">COURSE</Chip>
+                <h1 className={`my-3 mt-4.5${isSmall ? ' h2' : ''}`}>{name}</h1>
+                {/* eslint-disable-next-line react/no-danger */}
+                <div className="text-muted" dangerouslySetInnerHTML={{ __html: shortDescription || 'No description available.' }} />
+              </Card.Section>
+            </Card.Body>
+            {!isSmall && (
+              <Card.ImageCap
+                src={buildAssetUrl(courseImageAssetPath)}
+                srcAlt={`${name} course image`}
+                logoSrc={orgData.logo}
+                logoAlt={`${orgData.name} logo`}
+              />
+            )}
+          </Card>
+        )}
+        <Row className={`mx-0 px-5 px-md-6 flex-column flex-md-row align-items-start hero-info course-hero-info ${isModalView ? 'course-detail__modal-facts' : 'my-4'}`}>
           {dateDisplay && (
             <div className="d-flex align-items-center">
               <Icon src={AccessTimeFilled} className="mr-4 mb-3.5" />
@@ -171,7 +180,7 @@ const CourseDetailContent = ({
         </div>
       )}
 
-      <div className="py-3">
+      <div className={isModalView ? 'course-detail__modal-description' : 'py-3'}>
         <section id="about">
           {/* eslint-disable-next-line react/no-danger */}
           <div dangerouslySetInnerHTML={{
@@ -180,7 +189,7 @@ const CourseDetailContent = ({
           />
         </section>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -252,7 +261,7 @@ const CourseDetailPage = ({
   };
 
   return (
-    <div className="detail-page course-detail-page">
+    <div className={`detail-page course-detail-page ${isModalView ? 'course-detail-page--modal' : ''}`}>
       <CourseDetailContent
         course={courseWithFallbacks}
         isModalView={isModalView}

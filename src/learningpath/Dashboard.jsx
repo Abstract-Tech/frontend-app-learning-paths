@@ -7,13 +7,14 @@ import {
 } from '@openedx/paragon';
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
-import { FilterAlt, FilterList, Search } from '@openedx/paragon/icons';
+import { FilterList, Search } from '@openedx/paragon/icons';
 import { useLearningPaths, useLearnerDashboard, useOrganizations } from './data/queries';
 import LearningPathCard from './LearningPathCard';
 import { CourseCard } from './CourseCard';
 import FilterPanel from './FilterPanel';
 import { useScreenSize } from '../hooks/useScreenSize';
 import noResultsSVG from '../assets/no_results.svg';
+import './Dashboard.scss';
 
 const Dashboard = () => {
   const { isSmall } = useScreenSize();
@@ -23,17 +24,21 @@ const Dashboard = () => {
     data: learningPaths,
     isLoading: isLoadingPaths,
     error: pathsError,
+    refetch: refetchPaths,
   } = useLearningPaths();
 
   const {
     data: learnerDashboardData,
     isLoading: isLoadingCourses,
     error: coursesError,
+    refetch: refetchCourses,
   } = useLearnerDashboard();
 
   const {
     data: organizations,
     isLoading: isLoadingOrgs,
+    error: organizationsError,
+    refetch: refetchOrganizations,
   } = useOrganizations();
 
   const courses = learnerDashboardData?.courses;
@@ -41,12 +46,16 @@ const Dashboard = () => {
   const enterpriseDashboard = learnerDashboardData?.enterpriseDashboard;
 
   const isLoading = isLoadingPaths || isLoadingCourses || isLoadingOrgs;
-  const error = pathsError || coursesError;
+  const error = pathsError || coursesError || organizationsError;
 
-  if (error) {
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+
     // eslint-disable-next-line no-console
     console.error('Error loading data:', error);
-  }
+  }, [error]);
 
   const items = useMemo(() => {
     // If email confirmation is needed, return empty array to hide all items.
@@ -59,6 +68,7 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const mobileSearchRef = useRef(null);
+  const desktopFilterControlRef = useRef(null);
 
   const handleMobileSearchClick = () => {
     setShowMobileSearch(true);
@@ -107,7 +117,36 @@ const Dashboard = () => {
     localStorage.setItem(selectedDateStatusesKey, JSON.stringify(selectedDateStatuses));
   }, [selectedDateStatuses]);
   useEffect(() => { localStorage.setItem(selectedOrgsKey, JSON.stringify(selectedOrgs)); }, [selectedOrgs]);
-  useEffect(() => { localStorage.setItem(selectedOrgsKey, JSON.stringify(selectedOrgs)); }, [selectedOrgs]);
+
+  useEffect(() => {
+    if (!showFilters) {
+      return undefined;
+    }
+
+    const handleEscape = event => {
+      if (event.key === 'Escape') {
+        setShowFilters(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [showFilters]);
+
+  useEffect(() => {
+    if (!showFilters || isSmall) {
+      return undefined;
+    }
+
+    const handleOutsideClick = event => {
+      if (!desktopFilterControlRef.current?.contains(event.target)) {
+        setShowFilters(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [showFilters, isSmall]);
 
   const handleStatusChange = (status, isChecked) => {
     setSelectedStatuses(prev => {
@@ -243,7 +282,7 @@ const Dashboard = () => {
     return sortedItems.slice(start, start + PAGE_SIZE);
   }, [sortedItems, currentPage, PAGE_SIZE]);
 
-  const showingCount = Math.min(PAGE_SIZE, sortedItems.length - (currentPage - 1) * PAGE_SIZE);
+  const showingCount = Math.max(0, Math.min(PAGE_SIZE, sortedItems.length - (currentPage - 1) * PAGE_SIZE));
   const totalCount = sortedItems.length;
 
   useEffect(() => {
@@ -256,65 +295,104 @@ const Dashboard = () => {
     setCurrentPage(1);
   }, [searchQuery, selectedContentType, selectedStatuses, selectedDateStatuses, selectedOrgs]);
 
+  const handleRetry = () => {
+    refetchPaths();
+    refetchCourses();
+    refetchOrganizations();
+  };
+
   return (
     <>
       {emailConfirmation?.isNeeded && (
-        <Alert className="account-activation m-0 p-2 rounded-0 text-center">
+        <Alert variant="warning" className="account-activation m-0 p-2 rounded-0 text-center">
           Activate your account! Check your inbox for an account activation link from {getConfig().SITE_NAME}.
           If you need help, <Link to={`${getConfig().LMS_BASE_URL}/contact`} target="_blank" rel="noopener noreferrer">contact us</Link>.
         </Alert>
       )}
       {!emailConfirmation?.isNeeded && enterpriseDashboard?.isLearnerPortalEnabled && (
-        <Alert className="enterprise-dashboard m-0 p-2 rounded-0 text-center" style={{ lineHeight: '5rem', fontSize: '1.1rem' }}>
+        <Alert variant="info" className="enterprise-dashboard m-0 rounded-0 text-center">
           Your affiliation with <b>{enterpriseDashboard?.label || 'enterprise'}</b> provides access to additional courses. Check the {' '}
           <Link to={`${enterpriseDashboard?.url}?utm_source=lms_dashboard_banner`}>
             Course Finder
           </Link> to discover them.
         </Alert>
       )}
-      <div className="dashboard m-4.5">
+      <div className="dashboard">
         {isLoading ? (
           <div className="d-flex justify-content-center align-items-center vh-100">
             <Spinner animation="border" variant="primary" />
           </div>
+        ) : error ? (
+          <div className="dashboard-error d-flex flex-column align-items-center text-center py-5" role="alert">
+            <Alert variant="danger" className="mb-3">
+              We couldn&apos;t load your learning content. Please try again.
+            </Alert>
+            <Button variant="primary" onClick={handleRetry}>
+              Try again
+            </Button>
+          </div>
         ) : (
           <>
-            {showFilters && (
-              <div className={`filter-panel sidebar position-absolute open ${isSmall ? 'mobile' : ''}`}>
-                <FilterPanel
-                  selectedContentType={selectedContentType}
-                  onSelectContentType={setSelectedContentType}
-                  selectedStatuses={selectedStatuses}
-                  onChangeStatus={handleStatusChange}
-                  selectedDateStatuses={selectedDateStatuses}
-                  onChangeDateStatus={handleDateStatusChange}
-                  selectedOrgs={selectedOrgs}
-                  onChangeOrg={handleOrgChange}
-                  organizations={availableOrganizations}
-                  onClose={() => setShowFilters(false)}
-                  isSmall={isSmall}
-                  onClearAll={handleClearFilters}
+            {showFilters && isSmall && (
+              <>
+                <button
+                  type="button"
+                  className="filter-backdrop"
+                  aria-label="Close filters"
+                  onClick={() => setShowFilters(false)}
                 />
-              </div>
+                <div
+                  className="filter-panel sidebar position-fixed open mobile"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="learning-path-filter-title"
+                >
+                  <FilterPanel
+                    selectedContentType={selectedContentType}
+                    onSelectContentType={setSelectedContentType}
+                    selectedStatuses={selectedStatuses}
+                    onChangeStatus={handleStatusChange}
+                    selectedDateStatuses={selectedDateStatuses}
+                    onChangeDateStatus={handleDateStatusChange}
+                    selectedOrgs={selectedOrgs}
+                    onChangeOrg={handleOrgChange}
+                    organizations={availableOrganizations}
+                    onClose={() => setShowFilters(false)}
+                    isSmall
+                    onClearAll={handleClearFilters}
+                  />
+                </div>
+              </>
             )}
-            <div className={`dashboard-content ${showFilters ? 'shifted' : ''} ${showFilters && isSmall ? 'd-none' : ''}`}>
+            <div className={`dashboard-content ${showFilters && isSmall ? 'd-none' : ''}`}>
               <div className="dashboard-header d-flex justify-content-between align-items-center">
-                <h2>My Learning</h2>
+                <h1>My Learning</h1>
                 {!isSmall ? (
                   <SearchField
                     onClear={() => setSearchQuery('')}
                     onChange={setSearchQuery}
-                    onSubmit={() => {}}
                     value={searchQuery}
                     placeholder="Search"
                   />
                 ) : (
                   <div>
                     <IconButton src={Search} iconAs={Icon} variant="black" alt="Search" onClick={handleMobileSearchClick} />
-                    <div className="d-inline-block">
-                      <IconButton src={FilterList} iconAs={Icon} variant="black" alt="Filter" onClick={() => setShowFilters(true)} />
+                    <div className="d-inline-block position-relative">
+                      <IconButton
+                        src={FilterList}
+                        iconAs={Icon}
+                        variant="black"
+                        alt="Filter"
+                        aria-expanded={showFilters}
+                        onClick={() => setShowFilters(true)}
+                      />
                       {activeFiltersCount > 0 && (
-                        <Bubble className="position-absolute mt-4 ml-n3.5">{activeFiltersCount}</Bubble>
+                        <Bubble
+                          className="filter-active-count"
+                          aria-label={`${activeFiltersCount} active filters`}
+                        >
+                          {activeFiltersCount}
+                        </Bubble>
                       )}
                     </div>
                   </div>
@@ -325,7 +403,6 @@ const Dashboard = () => {
                   <SearchField
                     onClear={() => setSearchQuery('')}
                     onChange={setSearchQuery}
-                    onSubmit={() => {}}
                     onBlur={handleMobileSearchBlur}
                     value={searchQuery}
                     placeholder="Search"
@@ -333,11 +410,48 @@ const Dashboard = () => {
                 </div>
               )}
               <div className="d-flex justify-content-between align-items-center my-4">
-                <div className="d-flex align-items-center" style={{ gap: '0.5rem' }}>
-                  {!showFilters && !isSmall && (
-                    <Button onClick={() => setShowFilters(true)} variant="danger">
-                      <Icon src={FilterAlt} /> Filter
-                    </Button>
+                <div className="dashboard-toolbar-actions d-flex align-items-center">
+                  {!isSmall && (
+                    <div ref={desktopFilterControlRef} className="filter-control position-relative">
+                      <Button
+                        variant="outline-primary"
+                        aria-expanded={showFilters}
+                        onClick={() => setShowFilters(prev => !prev)}
+                      >
+                        <Icon src={FilterList} /> Filter
+                      </Button>
+                      {activeFiltersCount > 0 && (
+                        <Bubble
+                          className="filter-active-count"
+                          aria-label={`${activeFiltersCount} active filters`}
+                        >
+                          {activeFiltersCount}
+                        </Bubble>
+                      )}
+                      {showFilters && (
+                        <div
+                          className="filter-panel sidebar position-absolute open"
+                          role="dialog"
+                          aria-modal="false"
+                          aria-labelledby="learning-path-filter-title"
+                        >
+                          <FilterPanel
+                            selectedContentType={selectedContentType}
+                            onSelectContentType={setSelectedContentType}
+                            selectedStatuses={selectedStatuses}
+                            onChangeStatus={handleStatusChange}
+                            selectedDateStatuses={selectedDateStatuses}
+                            onChangeDateStatus={handleDateStatusChange}
+                            selectedOrgs={selectedOrgs}
+                            onChangeOrg={handleOrgChange}
+                            organizations={availableOrganizations}
+                            onClose={() => setShowFilters(false)}
+                            isSmall={false}
+                            onClearAll={handleClearFilters}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )}
                   {administrator && (
                     <Button as={Link} to="/create" variant="primary">
@@ -345,7 +459,7 @@ const Dashboard = () => {
                     </Button>
                   )}
                 </div>
-                <div className="small text-muted">
+                <div className="small text-muted" aria-live="polite">
                   Showing <b>{showingCount}</b> of <b>{totalCount}</b>
                 </div>
               </div>
@@ -361,7 +475,7 @@ const Dashboard = () => {
               ) : (
                 <>
                   {paginatedItems.map(item => (
-                    <Col xs={12} key={item.id || item.key} className={`dashboard-item p-0 mb-4 ${showFilters ? '' : 'mr-auto mx-auto'}`}>
+                    <Col xs={12} key={item.id || item.key} className="dashboard-item p-0 mb-4 mr-auto mx-auto">
                       {item.type === 'course'
                         ? (
                           <CourseCard

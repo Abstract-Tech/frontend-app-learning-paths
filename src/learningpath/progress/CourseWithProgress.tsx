@@ -19,6 +19,7 @@ const CourseWithProgress: React.FC<CourseWithProgressProps> = ({
   <div className="course-with-progress">
     <div className="progress-indicator-wrapper">
       <ProgressIndicator status={course.status} />
+      <div className="progress-connector" />
     </div>
     <div className="course-card-wrapper">
       <CourseCardWithEnrollment
@@ -28,17 +29,6 @@ const CourseWithProgress: React.FC<CourseWithProgressProps> = ({
         onClick={onCourseClick}
       />
     </div>
-    <div
-      className="progress-connector position-absolute"
-      style={{
-        top: '30px',
-        left: '17px',
-        width: '2px',
-        backgroundColor: '#E0E0E0',
-        zIndex: 1,
-        bottom: '-36px',
-      }}
-    />
   </div>
 );
 

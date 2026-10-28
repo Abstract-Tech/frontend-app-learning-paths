@@ -132,7 +132,7 @@ const LearningPathForm = ({
   };
 
   return (
-    <div className="create-learning-path-page p-4 container">
+    <div className="create-learning-path-page container">
       <Link to="/" className="d-flex align-items-center back-link mb-3">
         <Icon src={ChevronLeft} />
         <span>Go Back</span>

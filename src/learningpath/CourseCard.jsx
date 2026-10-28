@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import {
-  Card, Button, Col, ProgressBar, Chip, PageBanner, Icon,
+  Card, Button, ProgressBar, Chip, PageBanner, Icon,
 } from '@openedx/paragon';
 import {
   LmsBook,
@@ -19,6 +19,8 @@ import {
 } from './data/queries';
 import { buildCourseHomeUrl } from './utils';
 import { useScreenSize } from '../hooks/useScreenSize';
+import './StatusChip.scss';
+import './CourseCard.scss';
 
 export const CourseCard = ({
   course, relatedLearningPaths, onClick, onClickViewButton, isEnrolledInLearningPath, showFilters = false,
@@ -122,20 +124,21 @@ export const CourseCard = ({
 
   return (
     <>
-      <Card orientation={orientation} className={`course-card ${orientation}`} onMouseEnter={handleMouseEnter}>
+      <Card orientation={orientation} className={`learning-content-card course-content-card ${orientation}`} onMouseEnter={handleMouseEnter}>
         <Card.ImageCap
           src={buildAssetUrl(courseImageAssetPath)}
           srcAlt={`${name} course image`}
           logoSrc={orgData.logo}
           logoAlt={`${orgData.name} logo`}
+          className={orientation}
         />
         <Card.Body className="d-flex flex-column">
           <Card.Section className="pb-2.5 d-flex flex-grow-0 justify-content-between chip-section">
             <Chip iconBefore={LmsBook} className="border-0 p-0 course-chip">COURSE</Chip>
             {!!statusVariant && <Chip iconBefore={statusIcon} className={`pl-1 status-chip status-${statusVariant}`}>{status.toUpperCase()}</Chip>}
           </Card.Section>
-          <Card.Section className="pt-4 pt-md-1 pb-1"><h3>{name}</h3></Card.Section>
-          <Card.Section className="pt-1 pb-1">
+          <Card.Section className="course-card-title pt-4 pt-md-1 pb-1"><h3>{name}</h3></Card.Section>
+          <Card.Section className="course-card-progress pt-1 pb-1">
             {status.toLowerCase() === 'in progress' && !!statusVariant && (
               <>
                 <ProgressBar
@@ -152,12 +155,12 @@ export const CourseCard = ({
               <div className="small">You&apos;ve completed all required content. Remaining content is optional.</div>
             )}
           </Card.Section>
-          <Card.Footer orientation="horizontal" className="pt-3 pb-3 justify-content-between">
-            <Col className="d-flex p-0 flex-column-reverse flex-md-row align-items-start w-100 w-md-auto">
+          <Card.Footer orientation="horizontal" className="course-card-footer pt-3 pb-3 justify-content-between">
+            <Card.Section className="d-flex p-0 flex-column-reverse flex-md-row align-items-start w-100 w-md-auto">
               {accessText && (
                 <Chip iconBefore={AccessTime} className="border-0 pb-1 pb-md-0 p-0">{accessText}</Chip>
               )}
-            </Col>
+            </Card.Section>
             <div className="d-flex align-self-end ml-auto">
               {onClickViewButton && (
                 <Button variant="brand" onClick={onClickViewButton} className="mr-2 text-nowrap">More Info</Button>
@@ -178,7 +181,7 @@ export const CourseCard = ({
         </Card.Body>
       </Card>
       {relatedLearningPaths && relatedLearningPaths.length > 0 && (
-        <PageBanner className="rounded-bottom">
+        <PageBanner variant="light" className="rounded-bottom related-learning-paths">
           <div className="d-flex flex-wrap text-left w-100 mt-2 ml-2">
             <div className="d-flex align-items-center">
               <Icon src={Info} className="mr-2" />

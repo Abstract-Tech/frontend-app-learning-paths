@@ -13,19 +13,19 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({ status }) => {
       case 'completed':
         return {
           icon: CheckCircle,
-          color: '#52854C',
+          color: 'var(--pgn-color-success-base)',
           altText: 'Completed',
         };
       case 'in progress':
         return {
           icon: Timelapse,
-          color: 'var(--m-teal)',
+          color: 'var(--pgn-color-info-base)',
           altText: 'In progress',
         };
       default:
         return {
           icon: LmsCompletionSolid,
-          color: '#8996A0',
+          color: 'var(--pgn-color-secondary-base)',
           altText: 'Not started',
         };
     }
@@ -37,10 +37,9 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({ status }) => {
     <Icon
       src={config.icon}
       aria-label={`Progress status: ${config.altText}`}
+      className="progress-indicator"
       style={{
         color: `${config.color}`,
-        height: '36px',
-        width: '36px',
         zIndex: 2,
       }}
     />

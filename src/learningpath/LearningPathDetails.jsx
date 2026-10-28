@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  Row, Spinner, Nav, Icon, ModalLayer, Button, Chip, Card, Collapsible,
+  Row, Spinner, Nav, Icon, ModalLayer, Button, Chip, Image, Collapsible,
 } from '@openedx/paragon';
 import {
   Person,
@@ -18,6 +18,7 @@ import {
 import CourseDetailPage from './CourseDetails';
 import { CoursesWithProgressList } from './progress';
 import { useScreenSize } from '../hooks/useScreenSize';
+import './LearningPathDetails.scss';
 
 const LearningPathDetailPage = () => {
   const { isSmall } = useScreenSize();
@@ -147,44 +148,47 @@ const LearningPathDetailPage = () => {
     // Hero section - same for both full view and enrolled view.
     const heroSection = (
       <div className="hero">
-        <Card orientation={isSmall ? 'vertical' : 'horizontal'} className={isSmall ? 'border-0' : ''}>
-          <Card.Body>
-            <Card.Section className="px-2 py-3">
-              <Link to="/" className="d-flex align-items-center back-link pl-md-3">
-                <Icon src={ChevronLeft} />
-                <span>Go Back</span>
-              </Link>
-            </Card.Section>
-            {isSmall && (
-              <Card.ImageCap
+        <header className="learning-path-hero">
+          <div className="learning-path-hero__content">
+            <Link to="/" className="learning-path-hero__back-link d-inline-flex align-items-center">
+              <Icon src={ChevronLeft} />
+              <span>Go Back</span>
+            </Link>
+            <div className="learning-path-hero__summary">
+              <Chip iconBefore={FormatListBulleted} className="lp-chip">LEARNING PATH</Chip>
+              <h1 className="learning-path-hero__title">{displayName}</h1>
+              {/* eslint-disable-next-line react/no-danger */}
+              <div className="learning-path-hero__subtitle text-muted" dangerouslySetInnerHTML={{ __html: subtitle || 'No subtitle available.' }} />
+            </div>
+          </div>
+          <div className="learning-path-hero__media">
+            {image ? (
+              <Image
                 src={image}
-                srcAlt={`${displayName} learning path image`}
-                logoSrc={orgData.logo}
-                logoAlt={`${orgData.name} logo`}
-                className="mb-4"
+                alt={`${displayName} learning path image`}
+                className="learning-path-hero__image"
+              />
+            ) : (
+              <div className="learning-path-hero__image-fallback" aria-hidden="true" />
+            )}
+            {orgData.logo && (
+              <Image
+                src={orgData.logo}
+                alt={`${orgData.name} logo`}
+                className="learning-path-hero__logo"
               />
             )}
-            <Card.Section className="px-4 py-4 py-md-3.5">
-              <Chip iconBefore={FormatListBulleted} className="lp-chip">LEARNING PATH</Chip>
-              <h1 className="my-3 mt-4.5">{displayName}</h1>
-              {/* eslint-disable-next-line react/no-danger */}
-              <div className="text-muted" dangerouslySetInnerHTML={{ __html: subtitle || 'No subtitle available.' }} />
-            </Card.Section>
-          </Card.Body>
-          {!isSmall && (
-            <Card.ImageCap
-              src={image}
-              srcAlt={`${displayName} learning path image`}
-              logoSrc={orgData.logo}
-              logoAlt={`${orgData.name} logo`}
-            />
-          )}
-        </Card>
+          </div>
+        </header>
         {isSmall && (
-          <div className="mx-4">
+          <div className="learning-path-actions-mobile">
+            {administrator && (
+              <Button as={Link} to={`/edit/${key}`} variant="outline-primary">
+                Edit
+              </Button>
+            )}
             <Button
               variant={enrollmentDate ? 'secondary' : 'primary'}
-              className="px-3 w-100"
               onClick={handleEnrollClick}
               disabled={enrolling || !!enrollmentDate}
             >
@@ -196,42 +200,44 @@ const LearningPathDetailPage = () => {
             </Button>
           </div>
         )}
-        <Row className="my-4 mx-0 px-4 px-md-6 flex-column flex-md-row align-items-start hero-info lp-hero-info">
-          {accessUntilDate && (
+        <div className="lp-hero-info-surface">
+          <Row className="m-0 px-3 px-md-4 py-3 flex-column flex-md-row align-items-start hero-info lp-hero-info">
+            {accessUntilDate && (
+              <div className="d-flex">
+                <Icon src={AccessTimeFilled} className="mr-4 mb-3.5" />
+                <div>
+                  <p className="mb-0 font-weight-bold">
+                    {accessUntilDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                  <p className="mb-0 text-muted">Access ends</p>
+                </div>
+              </div>
+            )}
             <div className="d-flex">
-              <Icon src={AccessTimeFilled} className="mr-4 mb-3.5" />
+              <Icon src={Award} className="mr-4 mb-3.5" />
               <div>
-                <p className="mb-0 font-weight-bold">
-                  {accessUntilDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </p>
-                <p className="mb-0 text-muted">Access ends</p>
+                <p className="mb-0 font-weight-bold">Certificate</p>
+                <p className="mb-0 text-muted">Awarded upon completing the learning path</p>
               </div>
             </div>
-          )}
-          <div className="d-flex">
-            <Icon src={Award} className="mr-4 mb-3.5" />
-            <div>
-              <p className="mb-0 font-weight-bold">Certificate</p>
-              <p className="mb-0 text-muted">Awarded upon completing the learning path</p>
+            <div className="d-flex">
+              <Icon src={Calendar} className="mr-4 mb-3.5" />
+              <div>
+                <p className="mb-0 font-weight-bold">
+                  {duration || 'Duration not available'}
+                </p>
+                <p className="mb-0 text-muted">{timeCommitment || 'Duration'}</p>
+              </div>
             </div>
-          </div>
-          <div className="d-flex">
-            <Icon src={Calendar} className="mr-4 mb-3.5" />
-            <div>
-              <p className="mb-0 font-weight-bold">
-                {duration || 'Duration not available'}
-              </p>
-              <p className="mb-0 text-muted">{timeCommitment || 'Duration'}</p>
+            <div className="d-flex">
+              <Icon src={Person} className="mr-4 mb-3.5" />
+              <div>
+                <p className="mb-0 font-weight-bold">Self-paced</p>
+                <p className="mb-0 text-muted">Progress at your own speed</p>
+              </div>
             </div>
-          </div>
-          <div className="d-flex">
-            <Icon src={Person} className="mr-4 mb-3.5" />
-            <div>
-              <p className="mb-0 font-weight-bold">Self-paced</p>
-              <p className="mb-0 text-muted">Progress at your own speed</p>
-            </div>
-          </div>
-        </Row>
+          </Row>
+        </div>
       </div>
     );
 
@@ -239,7 +245,7 @@ const LearningPathDetailPage = () => {
       <div className="detail-page learning-path-detail-page">
         {heroSection}
         {!isSmall && (
-          <div className="tabs d-flex align-items-center pl-5.5 pr-0">
+          <div className="tabs">
             <Nav
               variant="tabs"
               onSelect={handleTabSelect}
@@ -258,28 +264,29 @@ const LearningPathDetailPage = () => {
                 </Nav.Item>
               )}
             </Nav>
-            {administrator && (
-              <Link to={`/edit/${key}`} className="ml-auto btn btn-outline-primary rounded-0 px-4 align-self-stretch d-flex align-items-center">
-                Edit
-              </Link>
-            )}
-            <Button
-              variant="brand"
-              className={`rounded-0 px-5.5 align-self-stretch ${administrator ? '' : 'ml-auto'}`}
-              onClick={handleEnrollClick}
-              disabled={enrolling || !!enrollmentDate}
-            >
-              {(() => {
-                if (enrolling) { return 'Enrolling...'; }
-                if (enrollmentDate) { return 'Enrolled'; }
-                return 'Enroll';
-              })()}
-            </Button>
+            <div className="tabs-actions">
+              {administrator && (
+                <Button as={Link} to={`/edit/${key}`} variant="outline-primary">
+                  Edit
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                onClick={handleEnrollClick}
+                disabled={enrolling || !!enrollmentDate}
+              >
+                {(() => {
+                  if (enrolling) { return 'Enrolling...'; }
+                  if (enrollmentDate) { return 'Enrolled'; }
+                  return 'Enroll';
+                })()}
+              </Button>
+            </div>
           </div>
         )}
-        <div className="py-3 lp-info">
+        <div className="py-5 lp-info">
           {isSmall ? (
-            <div className="mobile-content px-3">
+            <div className="mobile-content">
               <Collapsible
                 title="About"
                 open={openCollapsible === 'about'}

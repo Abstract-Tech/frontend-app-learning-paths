@@ -16,6 +16,7 @@ import {
 } from '@openedx/paragon/icons';
 import { useOrganizations, usePrefetchLearningPathDetail } from './data/queries';
 import { useScreenSize } from '../hooks/useScreenSize';
+import './StatusChip.scss';
 
 const LearningPathCard = ({ learningPath, showFilters = false }) => {
   const {
@@ -106,7 +107,7 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
   const progressBarPercent = useMemo(() => +(percent * 100).toFixed(1), [percent]);
 
   return (
-    <Card orientation={orientation} className={`lp-card ${orientation}`} onMouseEnter={handleMouseEnter}>
+    <Card orientation={orientation} className={`learning-content-card lp-card ${orientation}`} onMouseEnter={handleMouseEnter}>
       <Card.ImageCap
         src={image}
         srcAlt={`${displayName} learning path image`}
@@ -149,7 +150,7 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
           </Card.Section>
           <div className="d-flex align-self-end ml-auto">
             <Link to={`/learningpath/${key}`}>
-              <Button variant="secondary">{buttonText}</Button>
+              <Button variant="brand">{buttonText}</Button>
             </Link>
           </div>
         </Card.Footer>

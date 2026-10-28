@@ -1,7 +1,8 @@
 .course-split-screen {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  min-width: 0;
+  gap: var(--pgn-spacing-spacer-4);
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -10,15 +11,91 @@
 
 .course-split-pane {
   border: var(--pgn-size-border-width) solid var(--pgn-color-border);
-  border-radius: 0.5rem;
-  padding: 1rem;
+  min-width: 0;
+  border-radius: var(--pgn-size-card-border-radius-base);
+  padding: var(--pgn-spacing-spacer-3);
   background: var(--pgn-color-gray-100);
   max-height: 520px;
   overflow-y: auto;
 
   .course-split-pane-title {
-    font-size: 1rem;
+    font-size: var(--pgn-typography-font-size-h5-base);
     font-weight: 700;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--pgn-spacing-spacer-2);
+  }
+}
+
+.steps-drag-list {
+  min-width: 0;
+
+  > li {
+    min-width: 0;
+
+    .flex-grow-1 {
+      min-width: 0;
+    }
+
+    .font-weight-bold,
+    .text-muted {
+      overflow-wrap: anywhere;
+    }
+  }
+}
+
+@media (max-width: 767.98px) {
+  .create-learning-path-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: var(--pgn-spacing-spacer-3);
+  }
+
+  .course-split-pane {
+    max-height: none;
+    padding: var(--pgn-spacing-spacer-3);
+  }
+
+  .course-picker-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .course-picker-card {
+    min-width: 0;
+
+    .course-picker-card-title,
+    .course-picker-card-id {
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+  }
+
+  .steps-drag-list > li {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) var(--pgn-size-form-input-height-base) auto;
+    align-items: center;
+    gap: var(--pgn-spacing-spacer-2);
+
+    > span {
+      margin-inline-end: 0 !important;
+    }
+
+    > .form-group {
+      width: var(--pgn-size-form-input-height-base) !important;
+      margin: 0 !important;
+    }
+
+    .form-control {
+      padding-inline: var(--pgn-spacing-spacer-1);
+      font-size: var(--pgn-typography-font-size-sm);
+      text-align: center;
+    }
+
+    .font-weight-bold {
+      font-size: var(--pgn-typography-font-size-sm);
+    }
+
+    .text-muted {
+      font-size: var(--pgn-typography-font-size-xs);
+    }
   }
 }
