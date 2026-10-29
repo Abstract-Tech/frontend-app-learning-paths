@@ -3,15 +3,28 @@ import { getConfig, camelCaseObject, snakeCaseObject } from '@edx/frontend-platf
 
 export async function fetchLearningPaths() {
   const client = getAuthenticatedHttpClient();
-  // FIXME: This API has pagination.
-  const response = await client.get(`${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/`);
-  const data = response.data.results || response.data;
-  return camelCaseObject(data);
+  const baseUrl = getConfig().LMS_BASE_URL;
+  let nextUrl = `${baseUrl}/api/learning_paths/v1/learning-paths/`;
+  const allResults = [];
+
+  while (nextUrl) {
+    // eslint-disable-next-line no-await-in-loop
+    const response = await client.get(nextUrl);
+    const data = response.data || {};
+    const results = Array.isArray(data) ? data : (data.results || []);
+    allResults.push(...results);
+    nextUrl = data.next || data.pagination?.next || null;
+    if (nextUrl && nextUrl.startsWith('/')) {
+      nextUrl = `${baseUrl}${nextUrl}`;
+    }
+  }
+
+  return camelCaseObject(allResults);
 }
 
 export async function fetchLearningPathDetail(key) {
   const client = getAuthenticatedHttpClient();
-  const response = await client.get(`${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/${key}/`);
+  const response = await client.get(`${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/${encodeURIComponent(key)}/`);
   return camelCaseObject(response.data);
 }
 
@@ -23,19 +36,22 @@ export async function fetchLearnerDashboard() {
 
   const processedCourses = camelCaseObject(courses.map(course => {
     const { courseRun, course: courseInfo, enrollment } = course;
+    const courseId = courseRun?.courseId || '';
+    const [, courseKey] = courseId.split(':');
+    const [org, number, run] = courseKey ? courseKey.split('+') : [];
 
     return {
-      id: courseRun.courseId,
-      number: courseRun.courseId.split(':')[1].split('+')[1],
-      org: courseRun.courseId.split(':')[1].split('+')[0],
-      run: courseRun.courseId.split(':')[1].split('+')[2],
-      name: courseInfo.courseName,
+      id: courseId,
+      number,
+      org,
+      run,
+      name: courseInfo?.courseName || courseId,
       shortDescription: null,
-      endDate: courseRun.endDate,
-      startDate: courseRun.startDate,
-      courseImageAssetPath: courseInfo.bannerImgSrc,
-      isStarted: courseRun.isStarted,
-      isArchived: courseRun.isArchived,
+      endDate: courseRun?.endDate,
+      startDate: courseRun?.startDate,
+      courseImageAssetPath: courseInfo?.bannerImgSrc,
+      isStarted: courseRun?.isStarted,
+      isArchived: courseRun?.isArchived,
       enrollmentDate: enrollment?.lastEnrolled || null,
       access: {
         isStaff: enrollment?.coursewareAccess?.isStaff || false,
@@ -53,9 +69,9 @@ export async function fetchLearnerDashboard() {
 
 export async function fetchCourseDetails(courseId) {
   try {
-    const { username } = getAuthenticatedUser();
+    const { username } = getAuthenticatedUser() || {};
     const response = await getAuthenticatedHttpClient().get(
-      `${getConfig().LMS_BASE_URL}/api/courses/v1/courses/${encodeURIComponent(courseId)}/?username=${username}`,
+      `${getConfig().LMS_BASE_URL}/api/courses/v1/courses/${encodeURIComponent(courseId)}/?username=${encodeURIComponent(username || '')}`,
     );
     const { data } = response;
 
@@ -63,12 +79,12 @@ export async function fetchCourseDetails(courseId) {
       id: data.course_id,
       number: data.number,
       org: data.org,
-      run: data.id.split(':')[1].split('+')[2],
+      run: data.id?.split(':')[1]?.split('+')[2],
       name: data.name,
       shortDescription: data.short_description,
       endDate: data.end,
       startDate: data.start,
-      courseImageAssetPath: data.media.course_image.uri,
+      courseImageAssetPath: data.media?.course_image?.uri,
       description: data.overview,
       selfPaced: data.pacing === 'self',
       duration: data.effort,
@@ -82,20 +98,23 @@ export async function fetchCourseDetails(courseId) {
 }
 
 export async function fetchAllCourseCompletions() {
-  const { username } = getAuthenticatedUser();
+  const { username } = getAuthenticatedUser() || {};
   const client = getAuthenticatedHttpClient();
 
   let allResults = [];
-  let nextUrl = `${getConfig().LMS_BASE_URL}/completion-aggregator/v1/course/?username=${username}&page_size=10000&include_optional=true`;
+  let nextUrl = `${getConfig().LMS_BASE_URL}/completion-aggregator/v1/course/?username=${encodeURIComponent(username || '')}&page_size=10000&include_optional=true`;
 
   while (nextUrl) {
     // eslint-disable-next-line no-await-in-loop
     const response = await client.get(nextUrl);
-    const results = response.data.results || [];
+    const results = response.data?.results || [];
 
     allResults = [...allResults, ...results];
 
-    nextUrl = response.data.pagination?.next ? response.data.pagination.next : null;
+    nextUrl = response.data?.pagination?.next || response.data?.next || null;
+    if (nextUrl && nextUrl.startsWith('/')) {
+      nextUrl = `${getConfig().LMS_BASE_URL}${nextUrl}`;
+    }
   }
 
   return camelCaseObject(allResults.map(item => ({
@@ -107,58 +126,35 @@ export async function fetchAllCourseCompletions() {
 
 export async function enrollInLearningPath(learningPathId) {
   const client = getAuthenticatedHttpClient();
-  try {
-    const response = await client.post(
-      `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/${learningPathId}/enrollments/`,
-    );
-    return {
-      success: true,
-      status: response.status,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      status: error.response?.status,
-      error,
-    };
-  }
+  const response = await client.post(
+    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/${encodeURIComponent(learningPathId)}/enrollments/`,
+  );
+  return { success: true, status: response.status };
 }
 
 export async function enrollInCourse(learningPathId, courseId) {
   const client = getAuthenticatedHttpClient();
-  try {
-    const response = await client.post(
-      `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/${learningPathId}/enrollments/${courseId}/`,
-    );
-    return {
-      success: true,
-      status: response.status,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      status: error.response?.status,
-      error,
-    };
-  }
+  const response = await client.post(
+    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/${encodeURIComponent(learningPathId)}/enrollments/${encodeURIComponent(courseId)}/`,
+  );
+  return { success: true, status: response.status };
 }
 
 export async function fetchCourseEnrollmentStatus(courseId) {
   const client = getAuthenticatedHttpClient();
   try {
     const response = await client.get(
-      `${getConfig().LMS_BASE_URL}/api/enrollment/v1/enrollment/${courseId}`,
+      `${getConfig().LMS_BASE_URL}/api/enrollment/v1/enrollment/${encodeURIComponent(courseId)}/`,
     );
     return {
       isEnrolled: response.data?.is_active === true,
       data: camelCaseObject(response.data),
     };
   } catch (error) {
-    // Handle API errors - they indicate the user is not enrolled.
-    return {
-      isEnrolled: false,
-      error,
-    };
+    if (error.response?.status === 404) {
+      return { isEnrolled: false };
+    }
+    throw error;
   }
 }
 
@@ -171,9 +167,12 @@ export async function fetchOrganizations() {
   while (nextUrl) {
     // eslint-disable-next-line no-await-in-loop
     const response = await client.get(nextUrl);
-    const results = response.data.results || [];
+    const results = response.data?.results || [];
     allResults = [...allResults, ...results];
-    nextUrl = response.data.next || null;
+    nextUrl = response.data?.next || null;
+    if (nextUrl && nextUrl.startsWith('/')) {
+      nextUrl = `${getConfig().LMS_BASE_URL}${nextUrl}`;
+    }
   }
 
   return camelCaseObject(allResults.map(org => ({
@@ -195,7 +194,7 @@ export async function createLearningPath(payload) {
 export async function updateLearningPath(key, payload) {
   const client = getAuthenticatedHttpClient();
   const response = await client.patch(
-    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/${key}/`,
+    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/${encodeURIComponent(key)}/`,
     snakeCaseObject(payload),
   );
   return camelCaseObject(response.data);
@@ -206,7 +205,7 @@ export async function uploadLearningPathImage(key, imageFile) {
   const formData = new FormData();
   formData.append('image', imageFile);
   const response = await client.patch(
-    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/${key}/`,
+    `${getConfig().LMS_BASE_URL}/api/learning_paths/v1/learning-paths/${encodeURIComponent(key)}/`,
     formData,
   );
   return camelCaseObject(response.data);
@@ -214,9 +213,10 @@ export async function uploadLearningPathImage(key, imageFile) {
 
 export async function searchCourses(searchTerm) {
   const client = getAuthenticatedHttpClient();
+  const normalizedSearchTerm = searchTerm?.trim();
   const response = await client.get(
     `${getConfig().LMS_BASE_URL}/api/courses/v1/courses/`,
-    { params: { search_term: searchTerm || undefined, page_size: 50 } },
+    { params: { search_term: normalizedSearchTerm, page_size: 50 } },
   );
   const results = response.data.results || [];
   return camelCaseObject(results.map((course) => ({
@@ -234,9 +234,9 @@ export async function fetchCredentialConfiguration(learningContextKey) {
     );
     return camelCaseObject(response.data);
   } catch (error) {
-    return {
-      hasCredentials: false,
-      credentialCount: 0,
-    };
+    if (error.response?.status === 404) {
+      return { hasCredentials: false, credentialCount: 0 };
+    }
+    throw error;
   }
 }

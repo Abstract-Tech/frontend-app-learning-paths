@@ -1,0 +1,84 @@
+.courses-with-progress-list {
+  min-width: 0;
+  max-width: 100%;
+
+  .course-with-progress {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-bottom: var(--pgn-spacing-spacer-4);
+    position: relative;
+    display: flex;
+    align-items: start;
+
+    .progress-indicator-wrapper {
+      flex-shrink: 0;
+      width: 36px;
+      min-height: 36px;
+      position: relative;
+      align-self: stretch;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+
+      .progress-indicator {
+        position: relative;
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+        z-index: 1;
+        background-color: var(--pgn-color-bg-base);
+        border-radius: 50%;
+      }
+
+      .progress-connector {
+        position: absolute;
+        top: 36px;
+        bottom: calc(-1 * var(--pgn-spacing-spacer-4));
+        left: 50%;
+        width: 2px;
+        transform: translateX(-50%);
+        background-color: var(--pgn-color-border);
+        z-index: 0;
+      }
+    }
+
+    .course-card-wrapper {
+      flex: 1;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      margin-left: var(--pgn-spacing-spacer-3);
+      min-height: 100px;
+    }
+  }
+
+  .completion-message {
+    min-width: 0;
+    padding-top: var(--pgn-spacing-spacer-1);
+
+    .completion-message-title {
+      color: var(--pgn-color-text-base);
+      font-size: var(--pgn-typography-font-size-lg);
+      line-height: var(--pgn-typography-line-height-lg);
+    }
+  }
+}
+
+@media (max-width: 767.98px) {
+  .courses-with-progress-list {
+    .progress-indicator-wrapper {
+      width: 28px;
+      min-height: 28px;
+
+      .progress-indicator {
+        width: 28px;
+        height: 28px;
+      }
+
+      .progress-connector {
+        top: 28px;
+      }
+    }
+  }
+}

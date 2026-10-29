@@ -1,12 +1,14 @@
 import React, { useMemo } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import {
+  Link, Navigate, useNavigate, useParams,
+} from 'react-router-dom';
 import { Spinner, Icon } from '@openedx/paragon';
 import { ChevronLeft } from '@openedx/paragon/icons';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import {
   useLearningPathDetail, useCoursesByIds, useUpdateLearningPath, useUpdateLearningPathImage,
-} from './data/queries';
-import LearningPathForm from './components/LearningPathForm';
+} from '../../data/queries';
+import LearningPathForm from '../../components/LearningPathForm/LearningPathForm';
 
 const EditLearningPathPage = () => {
   const { key } = useParams();
@@ -54,12 +56,12 @@ const EditLearningPathPage = () => {
     }));
 
   const handleSubmit = async (payload, imageFile) => {
-    const { key: _unusedKey, ...updatePayload } = payload;
+    const { key: ignoredKey, ...updatePayload } = payload;
     await updateMutation.mutateAsync({ key, payload: updatePayload });
     if (imageFile) {
       await uploadImageMutation.mutateAsync({ key, file: imageFile });
     }
-    navigate(`/learningpath/${key}`);
+    navigate(`/learningpath/${encodeURIComponent(key)}`);
   };
 
   return (

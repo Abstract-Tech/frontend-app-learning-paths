@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  Row, Spinner, Nav, Icon, ModalLayer, Button, Chip, Card, Collapsible,
+  Row, Spinner, Nav, Icon, ModalLayer, Button, Chip, Image, Collapsible, Alert,
 } from '@openedx/paragon';
 import {
   Person,
@@ -14,10 +14,16 @@ import {
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import {
   useLearningPathDetail, useCoursesByIds, useEnrollLearningPath, useOrganizations,
-} from './data/queries';
-import CourseDetailPage from './CourseDetails';
-import { CoursesWithProgressList } from './progress';
-import { useScreenSize } from '../hooks/useScreenSize';
+} from '../../data/queries';
+import CourseDetailPage from '../CourseDetails/CourseDetails';
+import { CoursesWithProgressList } from '../../progress';
+import { useScreenSize } from '../../../hooks/useScreenSize';
+import { sanitizeHtml } from '../../../util/sanitizeHtml';
+import { buildAssetUrl } from '../../../util/assetUrl';
+import './LearningPathDetails.scss';
+
+/* Rich text is sanitized by sanitizeHtml before rendering. */
+/* eslint-disable react/no-danger */
 
 const LearningPathDetailPage = () => {
   const { isSmall } = useScreenSize();
@@ -25,6 +31,7 @@ const LearningPathDetailPage = () => {
   const { administrator } = getAuthenticatedUser() || {};
   const [selectedCourseKey, setSelectedCourseKey] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
+  const [enrollmentError, setEnrollmentError] = useState(null);
   const [openCollapsible, setOpenCollapsible] = useState(null);
 
   const [activeTab, setActiveTab] = useState(null);
@@ -39,7 +46,7 @@ const LearningPathDetailPage = () => {
   // Scroll to the top when the component mounts.
   useEffect(() => {
     // Add a timeout to ensure DOM updates are complete.
-    const id = setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 10);
+    const id = setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), 10);
     return () => clearTimeout(id);
   }, []);
 
@@ -94,21 +101,27 @@ const LearningPathDetailPage = () => {
 
   const handleEnrollClick = async () => {
     if (detail && !detail.enrollmentDate) {
+      setEnrollmentError(null);
       setEnrolling(true);
+      let enrolled = false;
       try {
         await enrollMutation.mutateAsync(key);
+        enrolled = true;
       } catch (error) {
+        setEnrollmentError('We couldn\'t enroll you in this learning path. Please try again.');
         // eslint-disable-next-line no-console
         console.error('Enrollment failed:', error);
       } finally {
-        setActiveTab('courses');
+        if (enrolled) {
+          setActiveTab('courses');
+        }
         setEnrolling(false);
       }
     }
   };
 
   // TODO: Retrieve this from the backend.
-  const org = key.match(/path-v1:([^+]+)/)[1];
+  const org = key?.match(/path-v1:([^+]+)/)?.[1] || null;
   const { data: organizations = {} } = useOrganizations();
   const orgData = useMemo(() => ({
     name: organizations[org]?.name || org,
@@ -147,44 +160,54 @@ const LearningPathDetailPage = () => {
     // Hero section - same for both full view and enrolled view.
     const heroSection = (
       <div className="hero">
-        <Card orientation={isSmall ? 'vertical' : 'horizontal'} className={isSmall ? 'border-0' : ''}>
-          <Card.Body>
-            <Card.Section className="px-2 py-3">
-              <Link to="/" className="d-flex align-items-center back-link pl-md-3">
-                <Icon src={ChevronLeft} />
-                <span>Go Back</span>
-              </Link>
-            </Card.Section>
-            {isSmall && (
-              <Card.ImageCap
-                src={image}
-                srcAlt={`${displayName} learning path image`}
-                logoSrc={orgData.logo}
-                logoAlt={`${orgData.name} logo`}
-                className="mb-4"
+        <header className="learning-path-hero">
+          <div className="learning-path-hero__content">
+            <Link to="/" className="learning-path-hero__back-link d-inline-flex align-items-center">
+              <Icon src={ChevronLeft} />
+              <span>Go Back</span>
+            </Link>
+            <div className="learning-path-hero__summary">
+              <Chip iconBefore={FormatListBulleted} className="lp-chip">LEARNING PATH</Chip>
+              <h1 className="learning-path-hero__title">{displayName}</h1>
+              <div
+                className="learning-path-hero__subtitle text-muted"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(subtitle || 'No subtitle available.') }}
+              />
+            </div>
+          </div>
+          <div className="learning-path-hero__media">
+            {image ? (
+              <Image
+                src={buildAssetUrl(image)}
+                alt={`${displayName} learning path image`}
+                className="learning-path-hero__image"
+              />
+            ) : (
+              <div className="learning-path-hero__image-fallback" aria-hidden="true" />
+            )}
+            {orgData.logo && (
+              <Image
+                src={buildAssetUrl(orgData.logo)}
+                alt={`${orgData.name} logo`}
+                className="learning-path-hero__logo"
               />
             )}
-            <Card.Section className="px-4 py-4 py-md-3.5">
-              <Chip iconBefore={FormatListBulleted} className="lp-chip">LEARNING PATH</Chip>
-              <h1 className="my-3 mt-4.5">{displayName}</h1>
-              {/* eslint-disable-next-line react/no-danger */}
-              <div className="text-muted" dangerouslySetInnerHTML={{ __html: subtitle || 'No subtitle available.' }} />
-            </Card.Section>
-          </Card.Body>
-          {!isSmall && (
-            <Card.ImageCap
-              src={image}
-              srcAlt={`${displayName} learning path image`}
-              logoSrc={orgData.logo}
-              logoAlt={`${orgData.name} logo`}
-            />
-          )}
-        </Card>
+          </div>
+        </header>
+        {enrollmentError && (
+          <div className="px-3 px-md-4" role="alert">
+            <Alert variant="danger" className="mb-3">{enrollmentError}</Alert>
+          </div>
+        )}
         {isSmall && (
-          <div className="mx-4">
+          <div className="learning-path-actions-mobile">
+            {administrator && (
+              <Button as={Link} to={`/edit/${encodeURIComponent(key)}`} variant="outline-primary">
+                Edit
+              </Button>
+            )}
             <Button
               variant={enrollmentDate ? 'secondary' : 'primary'}
-              className="px-3 w-100"
               onClick={handleEnrollClick}
               disabled={enrolling || !!enrollmentDate}
             >
@@ -196,42 +219,44 @@ const LearningPathDetailPage = () => {
             </Button>
           </div>
         )}
-        <Row className="my-4 mx-0 px-4 px-md-6 flex-column flex-md-row align-items-start hero-info lp-hero-info">
-          {accessUntilDate && (
+        <div className="lp-hero-info-surface">
+          <Row className="m-0 px-3 px-md-4 py-3 flex-column flex-md-row align-items-start hero-info lp-hero-info">
+            {accessUntilDate && (
+              <div className="d-flex">
+                <Icon src={AccessTimeFilled} className="mr-4 mb-3.5" />
+                <div>
+                  <p className="mb-0 font-weight-bold">
+                    {accessUntilDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                  <p className="mb-0 text-muted">Access ends</p>
+                </div>
+              </div>
+            )}
             <div className="d-flex">
-              <Icon src={AccessTimeFilled} className="mr-4 mb-3.5" />
+              <Icon src={Award} className="mr-4 mb-3.5" />
               <div>
-                <p className="mb-0 font-weight-bold">
-                  {accessUntilDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </p>
-                <p className="mb-0 text-muted">Access ends</p>
+                <p className="mb-0 font-weight-bold">Certificate</p>
+                <p className="mb-0 text-muted">Awarded upon completing the learning path</p>
               </div>
             </div>
-          )}
-          <div className="d-flex">
-            <Icon src={Award} className="mr-4 mb-3.5" />
-            <div>
-              <p className="mb-0 font-weight-bold">Certificate</p>
-              <p className="mb-0 text-muted">Awarded upon completing the learning path</p>
+            <div className="d-flex">
+              <Icon src={Calendar} className="mr-4 mb-3.5" />
+              <div>
+                <p className="mb-0 font-weight-bold">
+                  {duration || 'Duration not available'}
+                </p>
+                <p className="mb-0 text-muted">{timeCommitment || 'Duration'}</p>
+              </div>
             </div>
-          </div>
-          <div className="d-flex">
-            <Icon src={Calendar} className="mr-4 mb-3.5" />
-            <div>
-              <p className="mb-0 font-weight-bold">
-                {duration || 'Duration not available'}
-              </p>
-              <p className="mb-0 text-muted">{timeCommitment || 'Duration'}</p>
+            <div className="d-flex">
+              <Icon src={Person} className="mr-4 mb-3.5" />
+              <div>
+                <p className="mb-0 font-weight-bold">Self-paced</p>
+                <p className="mb-0 text-muted">Progress at your own speed</p>
+              </div>
             </div>
-          </div>
-          <div className="d-flex">
-            <Icon src={Person} className="mr-4 mb-3.5" />
-            <div>
-              <p className="mb-0 font-weight-bold">Self-paced</p>
-              <p className="mb-0 text-muted">Progress at your own speed</p>
-            </div>
-          </div>
-        </Row>
+          </Row>
+        </div>
       </div>
     );
 
@@ -239,7 +264,7 @@ const LearningPathDetailPage = () => {
       <div className="detail-page learning-path-detail-page">
         {heroSection}
         {!isSmall && (
-          <div className="tabs d-flex align-items-center pl-5.5 pr-0">
+          <div className="tabs">
             <Nav
               variant="tabs"
               onSelect={handleTabSelect}
@@ -258,28 +283,29 @@ const LearningPathDetailPage = () => {
                 </Nav.Item>
               )}
             </Nav>
-            {administrator && (
-              <Link to={`/edit/${key}`} className="ml-auto btn btn-outline-primary rounded-0 px-4 align-self-stretch d-flex align-items-center">
-                Edit
-              </Link>
-            )}
-            <Button
-              variant="brand"
-              className={`rounded-0 px-5.5 align-self-stretch ${administrator ? '' : 'ml-auto'}`}
-              onClick={handleEnrollClick}
-              disabled={enrolling || !!enrollmentDate}
-            >
-              {(() => {
-                if (enrolling) { return 'Enrolling...'; }
-                if (enrollmentDate) { return 'Enrolled'; }
-                return 'Enroll';
-              })()}
-            </Button>
+            <div className="tabs-actions">
+              {administrator && (
+                <Button as={Link} to={`/edit/${encodeURIComponent(key)}`} variant="outline-primary">
+                  Edit
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                onClick={handleEnrollClick}
+                disabled={enrolling || !!enrollmentDate}
+              >
+                {(() => {
+                  if (enrolling) { return 'Enrolling...'; }
+                  if (enrollmentDate) { return 'Enrolled'; }
+                  return 'Enroll';
+                })()}
+              </Button>
+            </div>
           </div>
         )}
-        <div className="py-3 lp-info">
+        <div className="py-5 lp-info">
           {isSmall ? (
-            <div className="mobile-content px-3">
+            <div className="mobile-content">
               <Collapsible
                 title="About"
                 open={openCollapsible === 'about'}
@@ -288,7 +314,7 @@ const LearningPathDetailPage = () => {
               >
                 <section id="about">
                   {/* eslint-disable-next-line react/no-danger */}
-                  <div dangerouslySetInnerHTML={{ __html: description || 'No description available.' }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(description || 'No description available.') }} />
                 </section>
               </Collapsible>
 
@@ -299,6 +325,9 @@ const LearningPathDetailPage = () => {
                 className="mb-2"
               >
                 <section id="courses">
+                  {coursesError && (
+                    <Alert variant="danger">We couldn&apos;t load the courses for this learning path.</Alert>
+                  )}
                   {!loadingCourses && !coursesError && (!coursesForPath || coursesForPath.length === 0) && (
                     <p>No sub-courses found in this learning path.</p>
                   )}
@@ -322,7 +351,7 @@ const LearningPathDetailPage = () => {
                   className="mb-2"
                 >
                   <section id="requirements">
-                    {requiredSkills.map((skillObj) => (
+                    {requiredSkills.filter(skillObj => skillObj?.skill?.displayName).map((skillObj) => (
                       <p key={`requirement-${skillObj.skill.displayName.replace(/\s+/g, '-').substring(0, 40)}`}>
                         {skillObj.skill.displayName}
                       </p>
@@ -337,13 +366,16 @@ const LearningPathDetailPage = () => {
                 <section id="about">
                   <h2>About</h2>
                   {/* eslint-disable-next-line react/no-danger */}
-                  <div dangerouslySetInnerHTML={{ __html: description || 'No description available.' }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(description || 'No description available.') }} />
                 </section>
               )}
               {activeTab === 'courses' && (
                 <div id="courses-section-wrapper">
                   <section id="courses" className="mx-auto">
                     <h2>Courses</h2>
+                    {coursesError && (
+                      <Alert variant="danger">We couldn&apos;t load the courses for this learning path.</Alert>
+                    )}
                     {!loadingCourses && !coursesError && (!coursesForPath || coursesForPath.length === 0) && (
                       <p>No sub-courses found in this learning path.</p>
                     )}
@@ -362,7 +394,7 @@ const LearningPathDetailPage = () => {
               {activeTab === 'requirements' && (
                 <section id="requirements">
                   <h2>Requirements</h2>
-                  {requiredSkills.map((skillObj) => (
+                  {requiredSkills.filter(skillObj => skillObj?.skill?.displayName).map((skillObj) => (
                     <p key={`requirement-${skillObj.skill.displayName.replace(/\s+/g, '-').substring(0, 40)}`}>
                       {skillObj.skill.displayName}
                     </p>

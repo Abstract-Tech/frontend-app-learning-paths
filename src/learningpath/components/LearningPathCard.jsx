@@ -14,8 +14,10 @@ import {
   FormatListBulleted,
   AccessTime,
 } from '@openedx/paragon/icons';
-import { useOrganizations, usePrefetchLearningPathDetail } from './data/queries';
-import { useScreenSize } from '../hooks/useScreenSize';
+import { useOrganizations, usePrefetchLearningPathDetail } from '../data/queries';
+import { useScreenSize } from '../../hooks/useScreenSize';
+import { buildAssetUrl } from '../../util/assetUrl';
+import './StatusChip.scss';
 
 const LearningPathCard = ({ learningPath, showFilters = false }) => {
   const {
@@ -43,10 +45,11 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
     prefetchLearningPathDetail(key);
   };
 
+  const normalizedStatus = status?.toLowerCase() || '';
   let statusVariant = 'dark';
-  let statusIcon = 'fa-circle';
+  let statusIcon = LmsCompletionSolid;
   let buttonText = 'View';
-  switch (status?.toLowerCase()) {
+  switch (normalizedStatus) {
     case 'completed':
       statusVariant = 'success';
       statusIcon = CheckCircle;
@@ -85,7 +88,7 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
       accessText = <>Access ended on <b>{maxDateStr}</b></>;
       buttonText = 'View';
       // Remove status, as learners cannot do anything to change it at this point.
-      if (status.toLowerCase() !== 'completed') {
+      if (normalizedStatus !== 'completed') {
         statusVariant = '';
       }
     } else {
@@ -106,9 +109,9 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
   const progressBarPercent = useMemo(() => +(percent * 100).toFixed(1), [percent]);
 
   return (
-    <Card orientation={orientation} className={`lp-card ${orientation}`} onMouseEnter={handleMouseEnter}>
+    <Card orientation={orientation} className={`learning-content-card lp-card ${orientation}`} onMouseEnter={handleMouseEnter}>
       <Card.ImageCap
-        src={image}
+        src={buildAssetUrl(image)}
         srcAlt={`${displayName} learning path image`}
         logoSrc={orgData.logo}
         logoAlt={`${orgData.name} logo`}
@@ -117,12 +120,16 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
       <Card.Body className="d-flex flex-column">
         <Card.Section className="pb-2.5 d-flex flex-grow-0 justify-content-between chip-section">
           <Chip iconBefore={FormatListBulleted} className="border-0 p-0 lp-chip">LEARNING PATH</Chip>
-          {!!statusVariant && <Chip iconBefore={statusIcon} className={`pl-1 status-chip status-${statusVariant}`}>{status.toUpperCase()}</Chip>}
+          {!!statusVariant && (
+            <Chip iconBefore={statusIcon} className={`pl-1 status-chip status-${statusVariant}`}>
+              {normalizedStatus.toUpperCase() || 'UNKNOWN'}
+            </Chip>
+          )}
         </Card.Section>
         <Card.Section className="pt-4 pt-md-1 pb-1"><h3>{displayName}</h3></Card.Section>
         <Card.Section className="pt-1 pb-1 card-subtitle text-muted">{subtitleLine}</Card.Section>
         <Card.Section className="pt-1 pb-1">
-          {status.toLowerCase() === 'in progress' && !!statusVariant && (
+          {normalizedStatus === 'in progress' && !!statusVariant && (
             <>
               <ProgressBar
                 now={progressBarPercent}
@@ -134,7 +141,7 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
               </div>
             </>
           )}
-          {status.toLowerCase() === 'completed' && hasUnearnedOptionalCompletion && (
+          {normalizedStatus === 'completed' && hasUnearnedOptionalCompletion && (
             <div className="small">You&apos;ve completed all required content. Remaining content is optional.</div>
           )}
         </Card.Section>
@@ -148,9 +155,9 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
             )}
           </Card.Section>
           <div className="d-flex align-self-end ml-auto">
-            <Link to={`/learningpath/${key}`}>
-              <Button variant="secondary">{buttonText}</Button>
-            </Link>
+            <Button as={Link} to={`/learningpath/${encodeURIComponent(key)}`} variant="brand">
+              {buttonText}
+            </Button>
           </div>
         </Card.Footer>
       </Card.Body>

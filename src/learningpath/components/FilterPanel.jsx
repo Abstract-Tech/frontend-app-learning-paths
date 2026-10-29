@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import {
   Button, ButtonGroup, Form, Icon, IconButton,
 } from '@openedx/paragon';
-import { FilterList, Close } from '@openedx/paragon/icons';
+import { Close } from '@openedx/paragon/icons';
 
 const FilterPanel = ({
   selectedContentType,
@@ -19,28 +19,19 @@ const FilterPanel = ({
   isSmall,
   onClearAll,
 }) => (
-  <div className="pl-3 pr-3 pt-2 mt-4.5">
+  <div className={`pl-3 pr-3 ${isSmall ? 'pt-2 mt-4.5' : 'py-3'}`}>
     <div className="d-flex justify-content-between align-items-center mb-3">
-      <h4 className="mb-0">Filter</h4>
+      <h2 id="learning-path-filter-title" className="mb-0 h4">Filter</h2>
       {!isSmall && (
         <Button variant="link" onClick={onClearAll} className="pr-4 filter-clear-link">Clear all</Button>
       )}
       <IconButton
-        src={isSmall ? Close : FilterList}
+        src={Close}
         iconAs={Icon}
         onClick={onClose}
-        className="position-absolute"
+        className={`filter-close-button ${isSmall ? 'mobile' : 'desktop'}`}
         alt="Close filter"
-        isActive
-        style={{
-          top: '2.3rem',
-          right: isSmall ? '1rem' : '-18px',
-          zIndex: 1000,
-          width: '36px',
-          height: '36px',
-          backgroundColor: isSmall ? 'transparent' : 'var(--icon-blue)',
-          color: isSmall ? 'black' : 'white',
-        }}
+        variant="light"
       />
     </div>
 

@@ -1,12 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useEffect, useMemo, useRef, useState,
+} from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import {
   Card, Form, Button, Alert, Icon,
 } from '@openedx/paragon';
 import { ChevronLeft } from '@openedx/paragon/icons';
-import CourseSearchPicker from './CourseSearchPicker';
-import StepsDragList from './StepsDragList';
+import CourseSearchPicker from '../CourseSearchPicker/CourseSearchPicker';
+import StepsDragList from '../StepsDragList';
+import './LearningPathForm.scss';
 
 const LEVEL_CHOICES = [
   { value: '', label: 'Select a level' },
@@ -15,7 +18,8 @@ const LEVEL_CHOICES = [
   { value: 'advanced', label: 'Advanced' },
 ];
 
-const KEY_PART_PATTERN = /^[^+]+$/;
+const KEY_PART_PATTERN = /^[A-Za-z0-9._-]+$/;
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
 const formatError = (error) => {
   const apiError = error?.response?.data;
@@ -29,7 +33,7 @@ const LearningPathForm = ({
   title, keyEditable, fixedKey, initial, submitLabel, submitting, onSubmit,
 }) => {
   useEffect(() => {
-    const id = setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 10);
+    const id = setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), 10);
     return () => clearTimeout(id);
   }, []);
 
@@ -47,8 +51,15 @@ const LearningPathForm = ({
   const [steps, setSteps] = useState(initial.steps || []);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(initial.imageUrl || null);
+  const imagePreviewRef = useRef(null);
   const [formError, setFormError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => () => {
+    if (imagePreviewRef.current) {
+      URL.revokeObjectURL(imagePreviewRef.current);
+    }
+  }, []);
 
   const learningPathKey = useMemo(() => {
     if (!keyEditable) {
@@ -84,10 +95,28 @@ const LearningPathForm = ({
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    if (!file) {
+      return;
     }
+
+    if (!file.type.startsWith('image/')) {
+      setFormError('Please select an image file.');
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setFormError('The cover image must be smaller than 5 MB.');
+      return;
+    }
+
+    if (imagePreviewRef.current) {
+      URL.revokeObjectURL(imagePreviewRef.current);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    imagePreviewRef.current = previewUrl;
+    setImageFile(file);
+    setImagePreview(previewUrl);
   };
 
   const handleSubmit = async (e) => {
@@ -95,7 +124,7 @@ const LearningPathForm = ({
     setFormError(null);
 
     if (!keyPartsValid) {
-      setFormError('Org, Number, Run, and Group are required and cannot contain a "+" character.');
+      setFormError('Org, Number, Run, and Group may contain only letters, numbers, dots, underscores, and hyphens.');
       return;
     }
     if (!displayName.trim()) {
@@ -131,7 +160,7 @@ const LearningPathForm = ({
   };
 
   return (
-    <div className="create-learning-path-page p-4 container">
+    <div className="create-learning-path-page container">
       <Link to="/" className="d-flex align-items-center back-link mb-3">
         <Icon src={ChevronLeft} />
         <span>Go Back</span>

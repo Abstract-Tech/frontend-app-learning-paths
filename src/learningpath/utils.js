@@ -7,9 +7,13 @@ import { getConfig } from '@edx/frontend-platform';
  */
 export const buildCourseHomeUrl = (courseId) => {
   const learningMfeBase = getConfig().LEARNING_BASE_URL;
-  const trimmedBase = learningMfeBase.replace(/\/$/, '');
+  if (!courseId || !learningMfeBase) {
+    return null;
+  }
+
+  const trimmedBase = learningMfeBase.replace(/\/+$/, '');
   const sanitizedBase = trimmedBase.endsWith('/learning')
     ? trimmedBase
     : `${trimmedBase}/learning`;
-  return `${sanitizedBase}/course/${courseId}/home`;
+  return `${sanitizedBase}/course/${encodeURIComponent(courseId)}/home`;
 };

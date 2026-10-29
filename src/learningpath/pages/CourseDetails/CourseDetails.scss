@@ -1,0 +1,86 @@
+.course-detail-page--modal {
+  width: min(64rem, calc(100vw - (var(--pgn-spacing-spacer-4) * 2)));
+  max-width: calc(100vw - (var(--pgn-spacing-spacer-4) * 2));
+  max-height: calc(100vh - (var(--pgn-spacing-spacer-4) * 2));
+  margin: var(--pgn-spacing-spacer-4) auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  border-radius: var(--pgn-size-card-border-radius-base);
+  background-color: var(--pgn-color-bg-base);
+  box-shadow: var(--pgn-elevation-box-shadow-level-3);
+}
+
+.course-detail--modal {
+  max-width: 100%;
+
+  .hero,
+  .course-detail__modal-facts,
+  .course-detail__modal-description {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .course-detail__modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pgn-spacing-spacer-3);
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 4rem;
+    padding: var(--pgn-spacing-spacer-2) var(--pgn-spacing-spacer-4);
+    background-color: var(--pgn-color-light-200);
+  }
+
+  .course-detail__modal-path {
+    min-width: 0;
+    color: var(--pgn-color-text-base);
+  }
+
+  .course-detail__modal-hero {
+    padding: var(--pgn-spacing-spacer-4);
+  }
+
+  .course-detail__modal-title {
+    margin: var(--pgn-spacing-spacer-3) 0 var(--pgn-spacing-spacer-2);
+  }
+
+  .course-detail__modal-subtitle {
+    max-width: 48rem;
+  }
+
+  .course-detail__modal-facts {
+    margin: 0;
+    padding: var(--pgn-spacing-spacer-3) var(--pgn-spacing-spacer-4);
+    background-color: var(--pgn-color-light-200);
+  }
+
+  .course-detail__modal-facts svg {
+    color: var(--pgn-color-primary-base);
+  }
+
+  .course-detail__modal-description {
+    max-width: 56rem;
+    padding: var(--pgn-spacing-spacer-4);
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .course-detail-page--modal {
+    width: calc(100vw - (var(--pgn-spacing-spacer-3) * 2));
+    max-width: calc(100vw - (var(--pgn-spacing-spacer-3) * 2));
+    max-height: calc(100vh - (var(--pgn-spacing-spacer-3) * 2));
+    margin: var(--pgn-spacing-spacer-3) auto;
+  }
+
+  .course-detail--modal {
+    .course-detail__modal-hero,
+    .course-detail__modal-description,
+    .course-detail__modal-facts {
+      padding: var(--pgn-spacing-spacer-3);
+    }
+  }
+}

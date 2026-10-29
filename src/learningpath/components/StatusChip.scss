@@ -1,0 +1,25 @@
+.status-chip {
+  border: 0;
+
+  &.status-secondary {
+    background-color: var(--pgn-color-secondary-base);
+  }
+
+  &.status-info {
+    background-color: var(--pgn-color-info-base);
+  }
+
+  &.status-success {
+    background-color: var(--pgn-color-success-base);
+  }
+
+  &.status-dark {
+    background-color: var(--pgn-color-dark-base);
+  }
+
+  .pgn__chip__label,
+  .pgn__chip__icon-before,
+  .pgn__chip__icon-after {
+    color: var(--pgn-color-white) !important;
+  }
+}

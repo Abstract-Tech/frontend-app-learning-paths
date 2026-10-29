@@ -8,6 +8,14 @@ import { getConfig } from '@edx/frontend-platform';
  * @returns {string} Complete URL to the asset.
  */
 export function buildAssetUrl(assetPath) {
+  if (!assetPath || typeof assetPath !== 'string') {
+    return undefined;
+  }
+
+  if (/^(?:https?:)?\/\//i.test(assetPath)) {
+    return assetPath;
+  }
+
   const base = getConfig().LMS_BASE_URL || '';
   return `${base.replace(/\/+$/, '')}/${assetPath.replace(/^\/+/, '')}`;
 }
@@ -27,7 +35,7 @@ export function replaceStaticAssetReferences(htmlContent, courseId) {
   return htmlContent.replace(
     /((?:src|href|data-src|poster)=)(["'])\/static\/([^"']+)\2/gi,
     (match, attrName, quote, fileName) => {
-      const lmsBaseUrl = getConfig().LMS_BASE_URL || '';
+      const lmsBaseUrl = (getConfig().LMS_BASE_URL || '').replace(/\/+$/, '');
       let assetUrl;
 
       if (courseId) {

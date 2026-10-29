@@ -1,8 +1,8 @@
 import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
-import { useCreateLearningPath, useUpdateLearningPathImage } from './data/queries';
-import LearningPathForm from './components/LearningPathForm';
+import { useCreateLearningPath, useUpdateLearningPathImage } from '../../data/queries';
+import LearningPathForm from '../../components/LearningPathForm/LearningPathForm';
 
 const CreateLearningPathPage = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const CreateLearningPathPage = () => {
     if (imageFile) {
       await uploadImageMutation.mutateAsync({ key: created.key, file: imageFile });
     }
-    navigate(`/learningpath/${created.key}`);
+    navigate(`/learningpath/${encodeURIComponent(created.key)}`);
   };
 
   return (

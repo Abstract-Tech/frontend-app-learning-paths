@@ -2,6 +2,7 @@ import React from 'react';
 import CourseWithProgress from './CourseWithProgress';
 import ProgressIndicator from './ProgressIndicator';
 import { Course } from './types';
+import './CoursesWithProgressList.scss';
 
 interface CompletionMessageProps {
   completed: 'Completed' | 'Not started';
@@ -14,7 +15,7 @@ const CompletionMessage: React.FC<CompletionMessageProps> = ({ completed }) => (
     </div>
     <div className="course-card-wrapper">
       <div className="completion-message">
-        <div className="font-weight-bold mb-2" style={{ color: 'black', fontSize: '1.375rem', marginTop: '0.125rem' }}>
+        <div className="completion-message-title font-weight-bold mb-2">
           Congratulations!
         </div>
         <div className="text-muted">
@@ -52,9 +53,11 @@ const CoursesWithProgressList: React.FC<CoursesWithProgressListProps> = ({
           />
         </div>
       ))}
-      <div className="mb-3">
-        <CompletionMessage completed={finalIndicatorStatus} />
-      </div>
+      {courses.length > 0 && (
+        <div className="mb-3">
+          <CompletionMessage completed={finalIndicatorStatus} />
+        </div>
+      )}
     </div>
   );
 };
