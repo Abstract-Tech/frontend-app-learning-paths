@@ -1,10 +1,6 @@
 @import "~@edx/frontend-component-header/dist/index";
 @import "~@edx/frontend-component-footer/dist/_footer";
 
-@import "../../brand-openedx/dist/core.min.css";
-@import "../../brand-openedx/dist/light.min.css";
-@import "../../brand-openedx/paragon/custom-ui/header/index.scss";
-
 #root {
   /* Make the footer stick to the bottom when there is not enough content. */
   height: 100%;
@@ -22,4 +18,3 @@
     flex: 1 0 auto;
   }
 }
-
