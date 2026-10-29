@@ -5,8 +5,8 @@ import { ChevronLeft } from '@openedx/paragon/icons';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import {
   useLearningPathDetail, useCoursesByIds, useUpdateLearningPath, useUpdateLearningPathImage,
-} from './data/queries';
-import LearningPathForm from './components/LearningPathForm';
+} from '../../data/queries';
+import LearningPathForm from '../../components/LearningPathForm/LearningPathForm';
 
 const EditLearningPathPage = () => {
   const { key } = useParams();

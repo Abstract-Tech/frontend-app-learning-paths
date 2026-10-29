@@ -8,12 +8,12 @@ import {
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { FilterList, Search } from '@openedx/paragon/icons';
-import { useLearningPaths, useLearnerDashboard, useOrganizations } from './data/queries';
-import LearningPathCard from './LearningPathCard';
-import { CourseCard } from './CourseCard';
-import FilterPanel from './FilterPanel';
-import { useScreenSize } from '../hooks/useScreenSize';
-import noResultsSVG from '../assets/no_results.svg';
+import { useLearningPaths, useLearnerDashboard, useOrganizations } from '../../data/queries';
+import LearningPathCard from '../../components/LearningPathCard';
+import { CourseCard } from '../../components/CourseCard/CourseCard';
+import FilterPanel from '../../components/FilterPanel';
+import { useScreenSize } from '../../../hooks/useScreenSize';
+import noResultsSVG from '../../../assets/no_results.svg';
 import './Dashboard.scss';
 
 const Dashboard = () => {

@@ -14,11 +14,11 @@ import { Container } from '@openedx/paragon';
 import { FooterSlot } from '@edx/frontend-component-footer';
 import messages from './i18n';
 import queryClient from './queryClient';
-import Dashboard from './learningpath/Dashboard';
-import LearningPathDetailPage from './learningpath/LearningPathDetails';
-import CourseDetailPage from './learningpath/CourseDetails';
-import CreateLearningPathPage from './learningpath/CreateLearningPath';
-import EditLearningPathPage from './learningpath/EditLearningPath';
+import Dashboard from './learningpath/pages/Dashboard/Dashboard';
+import LearningPathDetailPage from './learningpath/pages/LearningPathDetails/LearningPathDetails';
+import CourseDetailPage from './learningpath/pages/CourseDetails/CourseDetails';
+import CreateLearningPathPage from './learningpath/pages/CreateLearningPath/CreateLearningPath';
+import EditLearningPathPage from './learningpath/pages/EditLearningPath/EditLearningPath';
 import HeaderSlot from './plugin-slots/HeaderSlot';
 
 import './index.scss';

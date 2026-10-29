@@ -1,8 +1,8 @@
 import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
-import { useCreateLearningPath, useUpdateLearningPathImage } from './data/queries';
-import LearningPathForm from './components/LearningPathForm';
+import { useCreateLearningPath, useUpdateLearningPathImage } from '../../data/queries';
+import LearningPathForm from '../../components/LearningPathForm/LearningPathForm';
 
 const CreateLearningPathPage = () => {
   const navigate = useNavigate();

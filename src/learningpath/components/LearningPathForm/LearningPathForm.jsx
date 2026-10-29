@@ -5,8 +5,8 @@ import {
   Card, Form, Button, Alert, Icon,
 } from '@openedx/paragon';
 import { ChevronLeft } from '@openedx/paragon/icons';
-import CourseSearchPicker from './CourseSearchPicker';
-import StepsDragList from './StepsDragList';
+import CourseSearchPicker from '../CourseSearchPicker/CourseSearchPicker';
+import StepsDragList from '../StepsDragList';
 import './LearningPathForm.scss';
 
 const LEVEL_CHOICES = [

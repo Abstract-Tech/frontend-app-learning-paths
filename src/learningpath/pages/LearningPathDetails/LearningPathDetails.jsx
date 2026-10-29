@@ -14,10 +14,10 @@ import {
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import {
   useLearningPathDetail, useCoursesByIds, useEnrollLearningPath, useOrganizations,
-} from './data/queries';
-import CourseDetailPage from './CourseDetails';
-import { CoursesWithProgressList } from './progress';
-import { useScreenSize } from '../hooks/useScreenSize';
+} from '../../data/queries';
+import CourseDetailPage from '../CourseDetails/CourseDetails';
+import { CoursesWithProgressList } from '../../progress';
+import { useScreenSize } from '../../../hooks/useScreenSize';
 import './LearningPathDetails.scss';
 
 const LearningPathDetailPage = () => {
