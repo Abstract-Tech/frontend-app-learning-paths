@@ -57,7 +57,8 @@ export const useLearningPaths = () => {
 
       return learningPathList.map(lp => {
         // Calculate progress based on course completions
-        const totalCourses = lp.steps.length;
+        const steps = Array.isArray(lp.steps) ? lp.steps : [];
+        const totalCourses = steps.length;
 
         if (totalCourses === 0) {
           return {
@@ -72,7 +73,7 @@ export const useLearningPaths = () => {
 
         let hasOptionalCompletion = false;
         let hasUnearnedOptionalCompletion = false;
-        const totalCompletion = lp.steps.reduce((sum, step) => {
+        const totalCompletion = steps.reduce((sum, step) => {
           const completionData = completionsMap[step.courseKey];
           const optionalPossible = completionData?.optionalCompletion?.possible ?? 0;
           const optionalEarned = completionData?.optionalCompletion?.earned ?? 0;
@@ -90,7 +91,7 @@ export const useLearningPaths = () => {
 
         let minDate = null;
         let maxDate = null;
-        for (const course of lp.steps) {
+        for (const course of steps) {
           if (course.courseDates && course.courseDates.length > 0) {
             if (course.courseDates[0]) {
               const startDateObj = new Date(course.courseDates[0]);
@@ -117,7 +118,7 @@ export const useLearningPaths = () => {
           hasOptionalCompletion,
           hasUnearnedOptionalCompletion,
           type: 'learning_path',
-          org: lp.key.match(/path-v1:([^+]+)/)[1],
+          org: lp.key?.match(/path-v1:([^+]+)/)?.[1] || null,
           enrollmentDate: lp.enrollmentDate ? new Date(lp.enrollmentDate) : null,
         };
       });
@@ -157,20 +158,11 @@ export const usePrefetchLearningPathDetail = () => {
           queryFn: api.fetchAllCourseCompletions,
           staleTime: STALE_TIMES.COMPLETIONS,
         })
-          .then(completionsData => {
-            const completionsMap = {};
-            completionsData?.forEach?.(item => {
-              completionsMap[item.courseKey] = item.completion;
-            });
-
-            courseIds.forEach(courseId => {
-              queryClient.fetchQuery({
-                queryKey: QUERY_KEYS.COURSE_DETAILS(courseId),
-                queryFn: () => api.fetchCourseDetails(courseId),
-                staleTime: STALE_TIMES.COURSE_DETAIL,
-              });
-            });
-          })
+          .then(() => Promise.all(courseIds.map(courseId => queryClient.fetchQuery({
+            queryKey: QUERY_KEYS.COURSE_DETAILS(courseId),
+            queryFn: () => api.fetchCourseDetails(courseId),
+            staleTime: STALE_TIMES.COURSE_DETAIL,
+          }))))
           .catch(error => {
             // eslint-disable-next-line no-console
             console.error('Error prefetching course completions:', error);
@@ -275,7 +267,7 @@ export const useCoursesByIds = (courseIds) => {
 
       return results.filter(Boolean);
     },
-    enabled: courseIds && courseIds.length > 0,
+    enabled: Boolean(courseIds?.length),
   });
 };
 
@@ -290,7 +282,7 @@ export const useCourseDetail = (courseKey) => {
         queryFn: api.fetchAllCourseCompletions,
       });
 
-      queryClient.prefetchQuery({
+      await queryClient.prefetchQuery({
         queryKey: QUERY_KEYS.CREDENTIAL_CONFIGURATION(courseKey),
         queryFn: () => api.fetchCredentialConfiguration(courseKey),
         staleTime: STALE_TIMES.CREDENTIALS,
@@ -317,16 +309,16 @@ export const useCourseDetail = (courseKey) => {
 export const usePrefetchCourseDetail = (courseId) => {
   const queryClient = useQueryClient();
 
-  const prefetchCourse = useCallback(() => {
+  const prefetchCourse = useCallback(async () => {
     if (courseId) {
       try {
-        queryClient.fetchQuery({
+        await queryClient.fetchQuery({
           queryKey: QUERY_KEYS.COURSE_DETAILS(courseId),
           queryFn: () => api.fetchCourseDetails(courseId),
           staleTime: STALE_TIMES.COURSE_DETAIL,
         });
 
-        queryClient.prefetchQuery({
+        await queryClient.prefetchQuery({
           queryKey: QUERY_KEYS.CREDENTIAL_CONFIGURATION(courseId),
           queryFn: () => api.fetchCredentialConfiguration(courseId),
           staleTime: STALE_TIMES.CREDENTIALS,
@@ -387,7 +379,9 @@ export const useEnrollCourse = (learningPathId) => {
   return useMutation({
     mutationFn: (courseId) => api.enrollInCourse(learningPathId, courseId),
     onSuccess: (_, courseId) => {
-      queryClient.invalidateQueries(QUERY_KEYS.COURSE_ENROLLMENT_STATUS(courseId));
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.COURSE_ENROLLMENT_STATUS(courseId),
+      });
     },
   });
 };
@@ -417,6 +411,7 @@ export const useCredentialConfiguration = (learningContextKey) => useQuery({
 export const useCourseSearch = (searchTerm) => useQuery({
   queryKey: QUERY_KEYS.COURSE_SEARCH(searchTerm),
   queryFn: () => api.searchCourses(searchTerm),
+  enabled: Boolean(searchTerm?.trim()),
   staleTime: STALE_TIMES.COURSES,
 });
 

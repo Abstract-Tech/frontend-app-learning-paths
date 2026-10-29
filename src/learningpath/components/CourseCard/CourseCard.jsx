@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import {
-  Card, Button, ProgressBar, Chip, PageBanner, Icon,
+  Card, Button, ProgressBar, Chip, PageBanner, Icon, Alert,
 } from '@openedx/paragon';
 import {
   LmsBook,
@@ -39,7 +39,7 @@ export const CourseCard = ({
     access,
   } = course;
 
-  const { administrator } = getAuthenticatedUser();
+  const { administrator } = getAuthenticatedUser() || {};
   const { isSmall, isMedium } = useScreenSize();
   const orientation = (showFilters && (isSmall || isMedium)) || (!showFilters && isSmall) ? 'vertical' : 'horizontal';
 
@@ -53,10 +53,11 @@ export const CourseCard = ({
 
   const linkTo = buildCourseHomeUrl(course.id);
 
-  let statusVariant = 'dark'; // default
-  let statusIcon = 'fa-circle'; // default icon
+  const normalizedStatus = status?.toLowerCase() || '';
+  let statusVariant = 'dark';
+  let statusIcon = LmsCompletionSolid;
   let buttonText = 'View';
-  switch (status?.toLowerCase()) {
+  switch (normalizedStatus) {
     case 'completed':
       statusVariant = 'success';
       statusIcon = CheckCircle;
@@ -107,7 +108,7 @@ export const CourseCard = ({
       accessText = <>Access ended on <b>{endDateStr}</b></>;
       buttonText = 'View';
       // Remove status, as learners cannot do anything to change it at this point.
-      if (status.toLowerCase() !== 'completed') {
+      if (normalizedStatus !== 'completed') {
         statusVariant = '';
       }
     } else {
@@ -128,18 +129,22 @@ export const CourseCard = ({
         <Card.ImageCap
           src={buildAssetUrl(courseImageAssetPath)}
           srcAlt={`${name} course image`}
-          logoSrc={orgData.logo}
+          logoSrc={buildAssetUrl(orgData.logo)}
           logoAlt={`${orgData.name} logo`}
           className={orientation}
         />
         <Card.Body className="d-flex flex-column">
           <Card.Section className="pb-2.5 d-flex flex-grow-0 justify-content-between chip-section">
             <Chip iconBefore={LmsBook} className="border-0 p-0 course-chip">COURSE</Chip>
-            {!!statusVariant && <Chip iconBefore={statusIcon} className={`pl-1 status-chip status-${statusVariant}`}>{status.toUpperCase()}</Chip>}
+            {!!statusVariant && (
+              <Chip iconBefore={statusIcon} className={`pl-1 status-chip status-${statusVariant}`}>
+                {normalizedStatus.toUpperCase() || 'UNKNOWN'}
+              </Chip>
+            )}
           </Card.Section>
           <Card.Section className="course-card-title pt-4 pt-md-1 pb-1"><h3>{name}</h3></Card.Section>
           <Card.Section className="course-card-progress pt-1 pb-1">
-            {status.toLowerCase() === 'in progress' && !!statusVariant && (
+            {normalizedStatus === 'in progress' && !!statusVariant && (
               <>
                 <ProgressBar
                   now={progressBarPercent}
@@ -151,7 +156,7 @@ export const CourseCard = ({
                 </div>
               </>
             )}
-            {status.toLowerCase() === 'completed' && hasUnearnedOptionalCompletion && (
+            {normalizedStatus === 'completed' && hasUnearnedOptionalCompletion && (
               <div className="small">You&apos;ve completed all required content. Remaining content is optional.</div>
             )}
           </Card.Section>
@@ -171,9 +176,15 @@ export const CourseCard = ({
                     {buttonText}
                   </Button>
                 ) : (
-                  <Link to={linkTo}>
-                    <Button variant="brand" disabled={disableStartButton}>{buttonText}</Button>
-                  </Link>
+                  <Button
+                    as="a"
+                    href={disableStartButton ? undefined : linkTo}
+                    onClick={disableStartButton ? (event) => event.preventDefault() : undefined}
+                    variant="brand"
+                    disabled={disableStartButton}
+                  >
+                    {buttonText}
+                  </Button>
                 )
               )}
             </div>
@@ -190,7 +201,7 @@ export const CourseCard = ({
             <ul className="w-100 ml-2 mb-2">
               {relatedLearningPaths.map((learningPath) => (
                 <li key={`${course.id}-${learningPath.key}`}>
-                  <Link to={`/learningpath/${learningPath.key}`} target="_blank" rel="noopener noreferrer">{learningPath.name}</Link>
+                  <Link to={`/learningpath/${encodeURIComponent(learningPath.key)}`} target="_blank" rel="noopener noreferrer">{learningPath.name}</Link>
                 </li>
               ))}
             </ul>
@@ -234,6 +245,7 @@ export const CourseCardWithEnrollment = ({
 }) => {
   const { data: enrollmentStatus, isLoading: checkingEnrollment } = useCourseEnrollmentStatus(course.id);
   const [enrolling, setEnrolling] = useState(false);
+  const [actionError, setActionError] = useState(null);
   const enrollCourseMutation = useEnrollCourse(learningPathId);
 
   const courseWithEnrollment = {
@@ -246,10 +258,13 @@ export const CourseCardWithEnrollment = ({
   const courseHomeUrl = buildCourseHomeUrl(course.id);
 
   const handleCourseAction = async () => {
-    const { administrator } = getAuthenticatedUser();
+    const { administrator } = getAuthenticatedUser() || {};
+    setActionError(null);
 
     if (courseWithEnrollment.isEnrolledInCourse || administrator) {
-      window.location.href = courseHomeUrl;
+      if (courseHomeUrl) {
+        window.location.href = courseHomeUrl;
+      }
       return;
     }
 
@@ -257,12 +272,16 @@ export const CourseCardWithEnrollment = ({
     try {
       const result = await enrollCourseMutation.mutateAsync(course.id);
       if (result.success) {
-        window.location.href = courseHomeUrl;
+        if (courseHomeUrl) {
+          window.location.href = courseHomeUrl;
+        }
       } else {
+        setActionError('We couldn\'t start this course. Please try again.');
         // eslint-disable-next-line no-console
         console.error('Failed to enroll in the course:', result.data?.error || 'Unknown error');
       }
     } catch (error) {
+      setActionError('We couldn\'t start this course. Please try again.');
       // eslint-disable-next-line no-console
       console.error('Failed to enroll in the course:', error);
     } finally {
@@ -271,12 +290,15 @@ export const CourseCardWithEnrollment = ({
   };
 
   return (
-    <CourseCard
-      course={courseWithEnrollment}
-      onClick={handleCourseAction}
-      onClickViewButton={onClick}
-      isEnrolledInLearningPath={isEnrolledInLearningPath}
-    />
+    <>
+      <CourseCard
+        course={courseWithEnrollment}
+        onClick={handleCourseAction}
+        onClickViewButton={onClick}
+        isEnrolledInLearningPath={isEnrolledInLearningPath}
+      />
+      {actionError && <Alert variant="danger" className="mt-2">{actionError}</Alert>}
+    </>
   );
 };
 

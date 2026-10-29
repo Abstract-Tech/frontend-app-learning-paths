@@ -33,7 +33,7 @@
 
       .progress-connector {
         position: absolute;
-        top: 0;
+        top: 36px;
         bottom: calc(-1 * var(--pgn-spacing-spacer-4));
         left: 50%;
         width: 2px;
@@ -52,6 +52,17 @@
       min-height: 100px;
     }
   }
+
+  .completion-message {
+    min-width: 0;
+    padding-top: var(--pgn-spacing-spacer-1);
+
+    .completion-message-title {
+      color: var(--pgn-color-text-base);
+      font-size: var(--pgn-typography-font-size-lg);
+      line-height: var(--pgn-typography-line-height-lg);
+    }
+  }
 }
 
 @media (max-width: 767.98px) {
@@ -63,6 +74,10 @@
       .progress-indicator {
         width: 28px;
         height: 28px;
+      }
+
+      .progress-connector {
+        top: 28px;
       }
     }
   }

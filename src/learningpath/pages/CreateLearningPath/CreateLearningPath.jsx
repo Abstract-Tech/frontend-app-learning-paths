@@ -19,7 +19,7 @@ const CreateLearningPathPage = () => {
     if (imageFile) {
       await uploadImageMutation.mutateAsync({ key: created.key, file: imageFile });
     }
-    navigate(`/learningpath/${created.key}`);
+    navigate(`/learningpath/${encodeURIComponent(created.key)}`);
   };
 
   return (

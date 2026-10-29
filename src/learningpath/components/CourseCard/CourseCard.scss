@@ -1,11 +1,13 @@
-.course-content-card {
+.learning-content-card {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  overflow: hidden;
 
   .pgn__card-body,
   .pgn__card-footer,
-  .pgn__card-section {
+  .pgn__card-section,
+  .pgn__card-wrapper-image-cap {
     min-width: 0;
     max-width: 100%;
   }
@@ -13,7 +15,12 @@
   h3,
   .pgn__chip {
     max-width: 100%;
+    overflow-wrap: anywhere;
   }
+}
+
+.course-content-card {
+  @extend .learning-content-card;
 }
 
 @media (max-width: 767.98px) {

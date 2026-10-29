@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  Row, Spinner, Nav, Icon, ModalLayer, Button, Chip, Image, Collapsible,
+  Row, Spinner, Nav, Icon, ModalLayer, Button, Chip, Image, Collapsible, Alert,
 } from '@openedx/paragon';
 import {
   Person,
@@ -18,7 +18,12 @@ import {
 import CourseDetailPage from '../CourseDetails/CourseDetails';
 import { CoursesWithProgressList } from '../../progress';
 import { useScreenSize } from '../../../hooks/useScreenSize';
+import { sanitizeHtml } from '../../../util/sanitizeHtml';
+import { buildAssetUrl } from '../../../util/assetUrl';
 import './LearningPathDetails.scss';
+
+/* Rich text is sanitized by sanitizeHtml before rendering. */
+/* eslint-disable react/no-danger */
 
 const LearningPathDetailPage = () => {
   const { isSmall } = useScreenSize();
@@ -26,6 +31,7 @@ const LearningPathDetailPage = () => {
   const { administrator } = getAuthenticatedUser() || {};
   const [selectedCourseKey, setSelectedCourseKey] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
+  const [enrollmentError, setEnrollmentError] = useState(null);
   const [openCollapsible, setOpenCollapsible] = useState(null);
 
   const [activeTab, setActiveTab] = useState(null);
@@ -40,7 +46,7 @@ const LearningPathDetailPage = () => {
   // Scroll to the top when the component mounts.
   useEffect(() => {
     // Add a timeout to ensure DOM updates are complete.
-    const id = setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 10);
+    const id = setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), 10);
     return () => clearTimeout(id);
   }, []);
 
@@ -95,21 +101,27 @@ const LearningPathDetailPage = () => {
 
   const handleEnrollClick = async () => {
     if (detail && !detail.enrollmentDate) {
+      setEnrollmentError(null);
       setEnrolling(true);
+      let enrolled = false;
       try {
         await enrollMutation.mutateAsync(key);
+        enrolled = true;
       } catch (error) {
+        setEnrollmentError('We couldn\'t enroll you in this learning path. Please try again.');
         // eslint-disable-next-line no-console
         console.error('Enrollment failed:', error);
       } finally {
-        setActiveTab('courses');
+        if (enrolled) {
+          setActiveTab('courses');
+        }
         setEnrolling(false);
       }
     }
   };
 
   // TODO: Retrieve this from the backend.
-  const org = key.match(/path-v1:([^+]+)/)[1];
+  const org = key?.match(/path-v1:([^+]+)/)?.[1] || null;
   const { data: organizations = {} } = useOrganizations();
   const orgData = useMemo(() => ({
     name: organizations[org]?.name || org,
@@ -157,14 +169,16 @@ const LearningPathDetailPage = () => {
             <div className="learning-path-hero__summary">
               <Chip iconBefore={FormatListBulleted} className="lp-chip">LEARNING PATH</Chip>
               <h1 className="learning-path-hero__title">{displayName}</h1>
-              {/* eslint-disable-next-line react/no-danger */}
-              <div className="learning-path-hero__subtitle text-muted" dangerouslySetInnerHTML={{ __html: subtitle || 'No subtitle available.' }} />
+              <div
+                className="learning-path-hero__subtitle text-muted"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(subtitle || 'No subtitle available.') }}
+              />
             </div>
           </div>
           <div className="learning-path-hero__media">
             {image ? (
               <Image
-                src={image}
+                src={buildAssetUrl(image)}
                 alt={`${displayName} learning path image`}
                 className="learning-path-hero__image"
               />
@@ -173,17 +187,22 @@ const LearningPathDetailPage = () => {
             )}
             {orgData.logo && (
               <Image
-                src={orgData.logo}
+                src={buildAssetUrl(orgData.logo)}
                 alt={`${orgData.name} logo`}
                 className="learning-path-hero__logo"
               />
             )}
           </div>
         </header>
+        {enrollmentError && (
+          <div className="px-3 px-md-4" role="alert">
+            <Alert variant="danger" className="mb-3">{enrollmentError}</Alert>
+          </div>
+        )}
         {isSmall && (
           <div className="learning-path-actions-mobile">
             {administrator && (
-              <Button as={Link} to={`/edit/${key}`} variant="outline-primary">
+              <Button as={Link} to={`/edit/${encodeURIComponent(key)}`} variant="outline-primary">
                 Edit
               </Button>
             )}
@@ -266,7 +285,7 @@ const LearningPathDetailPage = () => {
             </Nav>
             <div className="tabs-actions">
               {administrator && (
-                <Button as={Link} to={`/edit/${key}`} variant="outline-primary">
+                <Button as={Link} to={`/edit/${encodeURIComponent(key)}`} variant="outline-primary">
                   Edit
                 </Button>
               )}
@@ -295,7 +314,7 @@ const LearningPathDetailPage = () => {
               >
                 <section id="about">
                   {/* eslint-disable-next-line react/no-danger */}
-                  <div dangerouslySetInnerHTML={{ __html: description || 'No description available.' }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(description || 'No description available.') }} />
                 </section>
               </Collapsible>
 
@@ -306,6 +325,9 @@ const LearningPathDetailPage = () => {
                 className="mb-2"
               >
                 <section id="courses">
+                  {coursesError && (
+                    <Alert variant="danger">We couldn&apos;t load the courses for this learning path.</Alert>
+                  )}
                   {!loadingCourses && !coursesError && (!coursesForPath || coursesForPath.length === 0) && (
                     <p>No sub-courses found in this learning path.</p>
                   )}
@@ -329,7 +351,7 @@ const LearningPathDetailPage = () => {
                   className="mb-2"
                 >
                   <section id="requirements">
-                    {requiredSkills.map((skillObj) => (
+                    {requiredSkills.filter(skillObj => skillObj?.skill?.displayName).map((skillObj) => (
                       <p key={`requirement-${skillObj.skill.displayName.replace(/\s+/g, '-').substring(0, 40)}`}>
                         {skillObj.skill.displayName}
                       </p>
@@ -344,13 +366,16 @@ const LearningPathDetailPage = () => {
                 <section id="about">
                   <h2>About</h2>
                   {/* eslint-disable-next-line react/no-danger */}
-                  <div dangerouslySetInnerHTML={{ __html: description || 'No description available.' }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(description || 'No description available.') }} />
                 </section>
               )}
               {activeTab === 'courses' && (
                 <div id="courses-section-wrapper">
                   <section id="courses" className="mx-auto">
                     <h2>Courses</h2>
+                    {coursesError && (
+                      <Alert variant="danger">We couldn&apos;t load the courses for this learning path.</Alert>
+                    )}
                     {!loadingCourses && !coursesError && (!coursesForPath || coursesForPath.length === 0) && (
                       <p>No sub-courses found in this learning path.</p>
                     )}
@@ -369,7 +394,7 @@ const LearningPathDetailPage = () => {
               {activeTab === 'requirements' && (
                 <section id="requirements">
                   <h2>Requirements</h2>
-                  {requiredSkills.map((skillObj) => (
+                  {requiredSkills.filter(skillObj => skillObj?.skill?.displayName).map((skillObj) => (
                     <p key={`requirement-${skillObj.skill.displayName.replace(/\s+/g, '-').substring(0, 40)}`}>
                       {skillObj.skill.displayName}
                     </p>

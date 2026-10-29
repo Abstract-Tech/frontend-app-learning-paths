@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Form, Spinner, IconButton, Icon,
-} from '@openedx/paragon';
+import { Form, Spinner, Icon } from '@openedx/paragon';
 import { Add, Check, Search } from '@openedx/paragon/icons';
 import { useCourseSearch } from '../../data/queries';
 import './CourseSearchPicker.scss';
@@ -16,7 +14,9 @@ const CourseSearchPicker = ({ onAddCourse, disabledCourseIds }) => {
     return () => clearTimeout(id);
   }, [inputValue]);
 
-  const { data: results, isLoading, isFetching } = useCourseSearch(searchTerm);
+  const {
+    data: results, isLoading, isFetching, error,
+  } = useCourseSearch(searchTerm);
 
   return (
     <div className="course-search-picker">
@@ -40,6 +40,12 @@ const CourseSearchPicker = ({ onAddCourse, disabledCourseIds }) => {
         <p className="text-muted small">No courses found.</p>
       )}
 
+      {error && (
+        <p className="text-danger small" role="alert">
+          We couldn&apos;t search courses. Please try again.
+        </p>
+      )}
+
       {results && results.length > 0 && (
         <div className="course-picker-grid">
           {results.map((course) => {
@@ -56,12 +62,10 @@ const CourseSearchPicker = ({ onAddCourse, disabledCourseIds }) => {
                   <div className="course-picker-card-title">{course.name}</div>
                   <div className="course-picker-card-id text-muted small">{course.id}</div>
                 </div>
-                <IconButton
+                <Icon
                   src={alreadyAdded ? Check : Add}
-                  iconAs={Icon}
-                  alt={alreadyAdded ? 'Added' : 'Add'}
-                  variant={alreadyAdded ? 'success' : 'primary'}
-                  tabIndex={-1}
+                  aria-hidden="true"
+                  className={alreadyAdded ? 'text-success' : 'text-primary'}
                 />
               </button>
             );

@@ -1,5 +1,5 @@
 import React, {
-  useState, useMemo, useEffect, useRef, useCallback,
+  useState, useMemo, useEffect, useRef,
 } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -15,6 +15,72 @@ import FilterPanel from '../../components/FilterPanel';
 import { useScreenSize } from '../../../hooks/useScreenSize';
 import noResultsSVG from '../../../assets/no_results.svg';
 import './Dashboard.scss';
+
+const STORAGE_KEYS = {
+  showFilters: 'lp_dashboard_showFilters',
+  selectedContentType: 'lp_dashboard_contentType',
+  selectedStatuses: 'lp_dashboard_selectedStatuses',
+  selectedDateStatuses: 'lp_dashboard_selectedDateStatuses',
+  selectedOrgs: 'lp_dashboard_selectedOrgs',
+};
+
+const readStoredValue = (key, fallback) => {
+  if (typeof window === 'undefined') {
+    return fallback;
+  }
+
+  try {
+    const storedValue = window.localStorage.getItem(key);
+    if (storedValue === null) {
+      return fallback;
+    }
+    const parsedValue = JSON.parse(storedValue);
+    return Array.isArray(fallback) && !Array.isArray(parsedValue) ? fallback : parsedValue;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeStoredValue = (key, value) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage can be unavailable in private browsing or restricted embeds.
+  }
+};
+
+const getItemDates = (item) => {
+  if (item.type === 'course') {
+    return {
+      startDate: item.startDate ? new Date(item.startDate) : null,
+      endDate: item.endDate ? new Date(item.endDate) : null,
+    };
+  }
+  if (item.type === 'learning_path') {
+    return {
+      startDate: item.minDate ? new Date(item.minDate) : null,
+      endDate: item.maxDate ? new Date(item.maxDate) : null,
+    };
+  }
+  return { startDate: null, endDate: null };
+};
+
+const getDateStatus = (item) => {
+  const currentDate = new Date();
+  const { startDate, endDate } = getItemDates(item);
+
+  if (startDate && startDate > currentDate) {
+    return 'Upcoming';
+  }
+  if (endDate && endDate < currentDate) {
+    return 'Ended';
+  }
+  return 'Open';
+};
 
 const Dashboard = () => {
   const { isSmall } = useScreenSize();
@@ -69,6 +135,8 @@ const Dashboard = () => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const mobileSearchRef = useRef(null);
   const desktopFilterControlRef = useRef(null);
+  const filterPanelRef = useRef(null);
+  const filterButtonRef = useRef(null);
 
   const handleMobileSearchClick = () => {
     setShowMobileSearch(true);
@@ -90,33 +158,32 @@ const Dashboard = () => {
     }
   };
 
-  const showFiltersKey = 'lp_dashboard_showFilters';
-  const selectedContentTypeKey = 'lp_dashboard_contentType';
-  const selectedStatusesKey = 'lp_dashboard_selectedStatuses';
-  const selectedDateStatusesKey = 'lp_dashboard_selectedDateStatuses';
-  const selectedOrgsKey = 'lp_dashboard_selectedOrgs';
-
-  const [showFilters, setShowFilters] = useState(() => localStorage.getItem(showFiltersKey) === 'true');
-  const [selectedContentType, setSelectedContentType] = useState(() => localStorage.getItem(selectedContentTypeKey) || 'All');
+  const [showFilters, setShowFilters] = useState(() => readStoredValue(STORAGE_KEYS.showFilters, false));
+  const [selectedContentType, setSelectedContentType] = useState(
+    () => {
+      const storedContentType = readStoredValue(STORAGE_KEYS.selectedContentType, 'All');
+      return ['All', 'course', 'learning_path'].includes(storedContentType) ? storedContentType : 'All';
+    },
+  );
   const [selectedStatuses, setSelectedStatuses] = useState(
-    () => JSON.parse(localStorage.getItem(selectedStatusesKey)) || [],
+    () => readStoredValue(STORAGE_KEYS.selectedStatuses, []),
   );
   const [selectedDateStatuses, setSelectedDateStatuses] = useState(
-    () => JSON.parse(localStorage.getItem(selectedDateStatusesKey)) || [],
+    () => readStoredValue(STORAGE_KEYS.selectedDateStatuses, []),
   );
   const [selectedOrgs, setSelectedOrgs] = useState(
-    () => JSON.parse(localStorage.getItem(selectedOrgsKey)) || [],
+    () => readStoredValue(STORAGE_KEYS.selectedOrgs, []),
   );
 
-  useEffect(() => { localStorage.setItem(showFiltersKey, showFilters.toString()); }, [showFilters]);
+  useEffect(() => { writeStoredValue(STORAGE_KEYS.showFilters, showFilters); }, [showFilters]);
   useEffect(() => {
-    localStorage.setItem(selectedContentTypeKey, selectedContentType.toString());
+    writeStoredValue(STORAGE_KEYS.selectedContentType, selectedContentType);
   }, [selectedContentType]);
-  useEffect(() => { localStorage.setItem(selectedStatusesKey, JSON.stringify(selectedStatuses)); }, [selectedStatuses]);
+  useEffect(() => { writeStoredValue(STORAGE_KEYS.selectedStatuses, selectedStatuses); }, [selectedStatuses]);
   useEffect(() => {
-    localStorage.setItem(selectedDateStatusesKey, JSON.stringify(selectedDateStatuses));
+    writeStoredValue(STORAGE_KEYS.selectedDateStatuses, selectedDateStatuses);
   }, [selectedDateStatuses]);
-  useEffect(() => { localStorage.setItem(selectedOrgsKey, JSON.stringify(selectedOrgs)); }, [selectedOrgs]);
+  useEffect(() => { writeStoredValue(STORAGE_KEYS.selectedOrgs, selectedOrgs); }, [selectedOrgs]);
 
   useEffect(() => {
     if (!showFilters) {
@@ -146,6 +213,20 @@ const Dashboard = () => {
 
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [showFilters, isSmall]);
+
+  useEffect(() => {
+    if (!showFilters || !isSmall) {
+      return undefined;
+    }
+
+    const firstFocusable = filterPanelRef.current?.querySelector(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    firstFocusable?.focus();
+
+    const trigger = filterButtonRef.current;
+    return () => trigger?.focus();
   }, [showFilters, isSmall]);
 
   const handleStatusChange = (status, isChecked) => {
@@ -203,35 +284,6 @@ const Dashboard = () => {
     [selectedContentType, selectedStatuses, selectedDateStatuses, selectedOrgs],
   );
 
-  const getItemDates = (item) => {
-    if (item.type === 'course') {
-      return {
-        startDate: item.startDate ? new Date(item.startDate) : null,
-        endDate: item.endDate ? new Date(item.endDate) : null,
-      };
-    }
-    if (item.type === 'learning_path') {
-      return {
-        startDate: item.minDate ? new Date(item.minDate) : null,
-        endDate: item.maxDate ? new Date(item.maxDate) : null,
-      };
-    }
-    return { startDate: null, endDate: null };
-  };
-
-  const getDateStatus = useCallback((item) => {
-    const currentDate = new Date();
-    const { startDate, endDate } = getItemDates(item);
-
-    if (startDate && startDate > currentDate) {
-      return 'Upcoming';
-    }
-    if (endDate && endDate < currentDate) {
-      return 'Ended';
-    }
-    return 'Open';
-  }, []);
-
   const filteredItems = useMemo(() => items.filter(item => {
     const typeMatch = selectedContentType === 'All'
       || (selectedContentType === 'course' && item.type === 'course')
@@ -243,7 +295,7 @@ const Dashboard = () => {
       || (item.displayName && item.displayName.toLowerCase().includes(searchQuery.toLowerCase()))
       || (item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase()));
     return typeMatch && statusMatch && dateStatusMatch && orgMatch && searchMatch;
-  }), [items, selectedContentType, selectedStatuses, selectedDateStatuses, selectedOrgs, searchQuery, getDateStatus]);
+  }), [items, selectedContentType, selectedStatuses, selectedDateStatuses, selectedOrgs, searchQuery]);
 
   const sortedItems = useMemo(() => {
     const statusOrder = { 'not started': 1, 'in progress': 2, completed: 3 };
@@ -272,9 +324,10 @@ const Dashboard = () => {
 
       return nameA.localeCompare(nameB);
     });
-  }, [filteredItems, getDateStatus]);
+  }, [filteredItems]);
 
-  const PAGE_SIZE = getConfig().DASHBOARD_PAGE_SIZE || 10;
+  const configuredPageSize = Number.parseInt(getConfig().DASHBOARD_PAGE_SIZE, 10);
+  const PAGE_SIZE = Number.isFinite(configuredPageSize) && configuredPageSize > 0 ? configuredPageSize : 10;
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(sortedItems.length / PAGE_SIZE);
   const paginatedItems = useMemo(() => {
@@ -318,11 +371,12 @@ const Dashboard = () => {
         </Alert>
       )}
       <div className="dashboard">
-        {isLoading ? (
+        {isLoading && (
           <div className="d-flex justify-content-center align-items-center vh-100">
             <Spinner animation="border" variant="primary" />
           </div>
-        ) : error ? (
+        )}
+        {!isLoading && error && (
           <div className="dashboard-error d-flex flex-column align-items-center text-center py-5" role="alert">
             <Alert variant="danger" className="mb-3">
               We couldn&apos;t load your learning content. Please try again.
@@ -331,7 +385,8 @@ const Dashboard = () => {
               Try again
             </Button>
           </div>
-        ) : (
+        )}
+        {!isLoading && !error && (
           <>
             {showFilters && isSmall && (
               <>
@@ -342,6 +397,8 @@ const Dashboard = () => {
                   onClick={() => setShowFilters(false)}
                 />
                 <div
+                  id="learning-path-filter-dialog"
+                  ref={filterPanelRef}
                   className="filter-panel sidebar position-fixed open mobile"
                   role="dialog"
                   aria-modal="true"
@@ -379,11 +436,14 @@ const Dashboard = () => {
                     <IconButton src={Search} iconAs={Icon} variant="black" alt="Search" onClick={handleMobileSearchClick} />
                     <div className="d-inline-block position-relative">
                       <IconButton
+                        ref={filterButtonRef}
                         src={FilterList}
                         iconAs={Icon}
                         variant="black"
                         alt="Filter"
                         aria-expanded={showFilters}
+                        aria-haspopup="dialog"
+                        aria-controls="learning-path-filter-dialog"
                         onClick={() => setShowFilters(true)}
                       />
                       {activeFiltersCount > 0 && (
@@ -414,8 +474,11 @@ const Dashboard = () => {
                   {!isSmall && (
                     <div ref={desktopFilterControlRef} className="filter-control position-relative">
                       <Button
+                        ref={filterButtonRef}
                         variant="outline-primary"
                         aria-expanded={showFilters}
+                        aria-haspopup="dialog"
+                        aria-controls="learning-path-filter-dialog"
                         onClick={() => setShowFilters(prev => !prev)}
                       >
                         <Icon src={FilterList} /> Filter
@@ -430,6 +493,7 @@ const Dashboard = () => {
                       )}
                       {showFilters && (
                         <div
+                          id="learning-path-filter-dialog"
                           className="filter-panel sidebar position-absolute open"
                           role="dialog"
                           aria-modal="false"

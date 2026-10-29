@@ -22,9 +22,13 @@ import {
 } from '@openedx/paragon/icons';
 import { useCourseDetail, useOrganizations, useCredentialConfiguration } from '../../data/queries';
 import { buildAssetUrl, replaceStaticAssetReferences } from '../../../util/assetUrl';
+import { sanitizeHtml } from '../../../util/sanitizeHtml';
 import { buildCourseHomeUrl } from '../../utils';
 import { useScreenSize } from '../../../hooks/useScreenSize';
 import './CourseDetails.scss';
+
+/* Rich text is sanitized by sanitizeHtml before rendering. */
+/* eslint-disable react/no-danger */
 
 const CourseDetailContent = ({
   course,
@@ -57,7 +61,10 @@ const CourseDetailContent = ({
   const { courseKey: urlCourseKey } = useParams();
   const activeCourseKey = course.id || urlCourseKey;
   const handleViewClick = () => {
-    window.location.href = buildCourseHomeUrl(activeCourseKey);
+    const courseHomeUrl = buildCourseHomeUrl(activeCourseKey);
+    if (courseHomeUrl) {
+      window.location.href = courseHomeUrl;
+    }
   };
 
   const { data: organizations = {} } = useOrganizations();
@@ -90,8 +97,10 @@ const CourseDetailContent = ({
           <section className="course-detail__modal-hero">
             <Chip iconBefore={LmsBook} className="course-chip">COURSE</Chip>
             <h1 className="course-detail__modal-title">{name}</h1>
-            {/* eslint-disable-next-line react/no-danger */}
-            <div className="course-detail__modal-subtitle text-muted" dangerouslySetInnerHTML={{ __html: shortDescription || 'No description available.' }} />
+            <div
+              className="course-detail__modal-subtitle text-muted"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(shortDescription || 'No description available.') }}
+            />
           </section>
         ) : (
           <Card orientation={isSmall ? 'vertical' : 'horizontal'}>
@@ -99,7 +108,7 @@ const CourseDetailContent = ({
             <Card.ImageCap
               src={buildAssetUrl(courseImageAssetPath)}
               srcAlt={`${name} course image`}
-              logoSrc={orgData.logo}
+              logoSrc={buildAssetUrl(orgData.logo)}
               logoAlt={`${orgData.name} logo`}
               className="mb-4"
             />
@@ -114,15 +123,17 @@ const CourseDetailContent = ({
               <Card.Section className="pl-5 pr-6">
                 <Chip iconBefore={LmsBook} className="course-chip">COURSE</Chip>
                 <h1 className={`my-3 mt-4.5${isSmall ? ' h2' : ''}`}>{name}</h1>
-                {/* eslint-disable-next-line react/no-danger */}
-                <div className="text-muted" dangerouslySetInnerHTML={{ __html: shortDescription || 'No description available.' }} />
+                <div
+                  className="text-muted"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(shortDescription || 'No description available.') }}
+                />
               </Card.Section>
             </Card.Body>
             {!isSmall && (
               <Card.ImageCap
                 src={buildAssetUrl(courseImageAssetPath)}
                 srcAlt={`${name} course image`}
-                logoSrc={orgData.logo}
+                logoSrc={buildAssetUrl(orgData.logo)}
                 logoAlt={`${orgData.name} logo`}
               />
             )}
@@ -184,7 +195,9 @@ const CourseDetailContent = ({
         <section id="about">
           {/* eslint-disable-next-line react/no-danger */}
           <div dangerouslySetInnerHTML={{
-            __html: replaceStaticAssetReferences(description || shortDescription || 'No description available.', course.id),
+            __html: sanitizeHtml(
+              replaceStaticAssetReferences(description || shortDescription || 'No description available.', course.id),
+            ),
           }}
           />
         </section>
