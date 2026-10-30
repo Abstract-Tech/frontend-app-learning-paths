@@ -408,10 +408,9 @@ export const useCredentialConfiguration = (learningContextKey) => useQuery({
   staleTime: STALE_TIMES.CREDENTIALS,
 });
 
-export const useCourseSearch = (searchTerm) => useQuery({
-  queryKey: QUERY_KEYS.COURSE_SEARCH(searchTerm),
+export const useCourseSearch = (searchTerm = '') => useQuery({
+  queryKey: QUERY_KEYS.COURSE_SEARCH(searchTerm.trim()),
   queryFn: () => api.searchCourses(searchTerm),
-  enabled: Boolean(searchTerm?.trim()),
   staleTime: STALE_TIMES.COURSES,
 });
 
