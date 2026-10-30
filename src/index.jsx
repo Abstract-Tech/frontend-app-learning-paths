@@ -29,19 +29,21 @@ subscribe(APP_READY, () => {
   root.render(
     <AppProvider store={null}>
       <QueryClientProvider client={queryClient}>
-        <HeaderSlot />
-        <main id="main-content">
-          <Container fluid size="xl">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/create" element={<CreateLearningPathPage />} />
-              <Route path="/edit/:key" element={<EditLearningPathPage />} />
-              <Route path="/learningpath/:key/*" element={<LearningPathDetailPage />} />
-              <Route path="/course/:courseKey" element={<CourseDetailPage />} />
-            </Routes>
-          </Container>
-        </main>
-        <FooterSlot />
+        <div className="learning-paths-app">
+          <HeaderSlot />
+          <main id="main-content">
+            <Container fluid size="xl">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/create" element={<CreateLearningPathPage />} />
+                <Route path="/edit/:key" element={<EditLearningPathPage />} />
+                <Route path="/learningpath/:key/*" element={<LearningPathDetailPage />} />
+                <Route path="/course/:courseKey" element={<CourseDetailPage />} />
+              </Routes>
+            </Container>
+          </main>
+          <FooterSlot />
+        </div>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
       </QueryClientProvider>
     </AppProvider>,
