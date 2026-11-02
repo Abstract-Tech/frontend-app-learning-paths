@@ -31,7 +31,6 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
     minDate,
     maxDate,
     percent,
-    hasOptionalCompletion,
     hasUnearnedOptionalCompletion,
     org,
   } = learningPath;
@@ -130,16 +129,12 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
         <Card.Section className="pt-1 pb-1 card-subtitle text-muted">{subtitleLine}</Card.Section>
         <Card.Section className="pt-1 pb-1">
           {normalizedStatus === 'in progress' && !!statusVariant && (
-            <>
-              <ProgressBar
-                now={progressBarPercent}
-                label={`${progressBarPercent}%`}
-                variant="primary"
-              />
-              <div className="x-small text-right pt-1">
-                {hasOptionalCompletion ? 'Required content completed' : 'content completed'}
-              </div>
-            </>
+            <ProgressBar
+              now={progressBarPercent}
+              label={progressBarPercent === 0 ? '0' : `${progressBarPercent}%`}
+              variant="primary"
+              aria-label="Learning path progress"
+            />
           )}
           {normalizedStatus === 'completed' && hasUnearnedOptionalCompletion && (
             <div className="small">You&apos;ve completed all required content. Remaining content is optional.</div>

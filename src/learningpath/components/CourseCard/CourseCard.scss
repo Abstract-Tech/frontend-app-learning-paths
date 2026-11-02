@@ -1,4 +1,9 @@
 .learning-content-card {
+  // Match Card.ImageCap's radius to the card's inner content radius.
+  --pgn-size-card-image-border-radius: var(
+    --pgn-size-card-border-radius-inner
+  );
+
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -112,34 +117,48 @@
   }
 }
 
-.course-content-card:has(+ .related-learning-paths) {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  box-shadow: var(--pgn-elevation-box-shadow-down-1);
-  clip-path: inset(
-    calc(var(--pgn-spacing-spacer-3) * -1)
-    calc(var(--pgn-spacing-spacer-3) * -1)
-    0
-    calc(var(--pgn-spacing-spacer-3) * -1)
-  );
-
-  .pgn__card-wrapper-image-cap.horizontal {
-    border-bottom-left-radius: 0;
-
-    .pgn__card-image-cap {
-      border-bottom-left-radius: 0;
-    }
-  }
+.course-related-paths {
+  display: flex;
+  flex-grow: 0;
+  align-items: center;
+  gap: var(--pgn-spacing-spacer-2);
+  padding-top: var(--pgn-spacing-spacer-2);
+  padding-bottom: var(--pgn-spacing-spacer-2);
+  border-top: var(--pgn-size-border-width) solid
+    var(--pgn-color-light-400);
 }
 
-.related-learning-paths {
-  margin-top: calc(-1 * var(--pgn-size-card-border-width));
-  overflow: hidden;
-  border-bottom-left-radius: var(--pgn-size-border-radius-xl);
-  border-bottom-right-radius: var(--pgn-size-border-radius-xl);
-  box-shadow: var(--pgn-elevation-box-shadow-down-1);
+.course-related-paths-label {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--pgn-spacing-spacer-1);
+  color: var(--pgn-color-gray-700);
+  font-size: var(--pgn-typography-font-size-sm);
+  font-weight: var(--pgn-typography-font-weight-semi-bold);
+}
 
-  .pgn__pageBanner-content .pgn__icon {
-    color: var(--pgn-color-info-900);
+.course-related-paths-label .pgn__icon {
+  flex: 0 0 auto;
+}
+
+.course-related-paths-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pgn-spacing-spacer-1) var(--pgn-spacing-spacer-3);
+  min-width: 0;
+}
+
+.course-related-path-link {
+  overflow-wrap: anywhere;
+  font-size: var(--pgn-typography-font-size-sm);
+  font-weight: var(--pgn-typography-font-weight-semi-bold);
+}
+
+@media (max-width: 767.98px) {
+  .course-related-paths {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--pgn-spacing-spacer-1);
   }
 }
