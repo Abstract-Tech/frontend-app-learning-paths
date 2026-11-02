@@ -1,4 +1,7 @@
 .learning-content-card {
+  // Match Card.ImageCap's radius to the card's inner content radius.
+  --pgn-size-card-image-border-radius: var(--pgn-size-card-border-radius-inner);
+
   width: 100%;
   max-width: 100%;
   min-width: 0;
