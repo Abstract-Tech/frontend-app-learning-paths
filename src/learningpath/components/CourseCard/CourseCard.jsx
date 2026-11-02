@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import {
-  Card, Button, ProgressBar, Chip, PageBanner, Icon, Alert,
+  Card, Button, ProgressBar, Chip, Icon, Alert,
 } from '@openedx/paragon';
 import {
   LmsBook,
@@ -10,7 +10,7 @@ import {
   CheckCircle,
   LmsCompletionSolid,
   Timelapse,
-  Info,
+  FormatListBulleted,
 } from '@openedx/paragon/icons';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { buildAssetUrl } from '../../../util/assetUrl';
@@ -33,7 +33,6 @@ export const CourseCard = ({
     endDate,
     status,
     percent,
-    hasOptionalCompletion,
     hasUnearnedOptionalCompletion,
     checkingEnrollment,
     access,
@@ -145,21 +144,43 @@ export const CourseCard = ({
           <Card.Section className="course-card-title pt-4 pt-md-1 pb-1"><h3>{name}</h3></Card.Section>
           <Card.Section className="course-card-progress pt-1 pb-1">
             {normalizedStatus === 'in progress' && !!statusVariant && (
-              <>
-                <ProgressBar
-                  now={progressBarPercent}
-                  label={`${progressBarPercent}%`}
-                  variant="primary"
-                />
-                <div className="x-small text-right pt-1">
-                  {hasOptionalCompletion ? 'Required content completed' : 'content completed'}
-                </div>
-              </>
+              <ProgressBar
+                now={progressBarPercent}
+                label={progressBarPercent === 0 ? '0' : `${progressBarPercent}%`}
+                variant="primary"
+                aria-label="Course progress"
+              />
             )}
             {normalizedStatus === 'completed' && hasUnearnedOptionalCompletion && (
               <div className="small">You&apos;ve completed all required content. Remaining content is optional.</div>
             )}
           </Card.Section>
+          {relatedLearningPaths && relatedLearningPaths.length > 0 && (
+            <Card.Section className="course-related-paths">
+              <div className="course-related-paths-label">
+                <Icon src={FormatListBulleted} />
+                <span>
+                  {relatedLearningPaths.length > 1
+                    ? 'This course is included in these learning paths:'
+                    : 'This course is part of the learning path:'}
+                </span>
+              </div>
+              <div className="course-related-paths-list">
+                {relatedLearningPaths.map((learningPath) => (
+                  <Link
+                    key={`${course.id}-${learningPath.key}`}
+                    to={`/learningpath/${encodeURIComponent(learningPath.key)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="course-related-path-link"
+                    aria-label={`View learning path: ${learningPath.name}`}
+                  >
+                    {learningPath.name}
+                  </Link>
+                ))}
+              </div>
+            </Card.Section>
+          )}
           <Card.Footer orientation="horizontal" className="course-card-footer pt-3 pb-3 justify-content-between">
             <Card.Section className="d-flex p-0 flex-column-reverse flex-md-row align-items-start w-100 w-md-auto">
               {accessText && (
@@ -191,23 +212,6 @@ export const CourseCard = ({
           </Card.Footer>
         </Card.Body>
       </Card>
-      {relatedLearningPaths && relatedLearningPaths.length > 0 && (
-        <PageBanner variant="light" className="rounded-bottom related-learning-paths">
-          <div className="d-flex flex-wrap text-left w-100 mt-2 ml-2">
-            <div className="d-flex align-items-center">
-              <Icon src={Info} className="mr-2" />
-              <p className="mb-0">Related Learning Path{relatedLearningPaths.length > 1 ? 's' : ''}:</p>
-            </div>
-            <ul className="w-100 ml-2 mb-2">
-              {relatedLearningPaths.map((learningPath) => (
-                <li key={`${course.id}-${learningPath.key}`}>
-                  <Link to={`/learningpath/${encodeURIComponent(learningPath.key)}`} target="_blank" rel="noopener noreferrer">{learningPath.name}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </PageBanner>
-      )}
     </>
   );
 };
