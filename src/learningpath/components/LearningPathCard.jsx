@@ -13,6 +13,7 @@ import {
   Timelapse,
   FormatListBulleted,
   AccessTime,
+  School,
 } from '@openedx/paragon/icons';
 import { useOrganizations, usePrefetchLearningPathDetail } from '../data/queries';
 import { useScreenSize } from '../../hooks/useScreenSize';
@@ -143,7 +144,7 @@ const LearningPathCard = ({ learningPath, showFilters = false }) => {
         <Card.Footer orientation="horizontal" className="pt-3 pb-3 justify-content-between">
           <Card.Section className="d-flex p-0 flex-column-reverse flex-md-row align-items-start w-100 w-md-auto">
             {numCourses && (
-              <Chip iconBefore={FormatListBulleted} className="border-0 pb-1 pb-md-0 p-0">{numCourses} courses</Chip>
+              <Chip iconBefore={School} className="border-0 pb-1 pb-md-0 p-0">{numCourses} courses</Chip>
             )}
             {accessText && (
               <Chip iconBefore={AccessTime} className="border-0 pb-1 pb-md-0 p-0">{accessText}</Chip>
