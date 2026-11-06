@@ -17,6 +17,7 @@ import {
 } from '../../data/queries';
 import CourseDetailPage from '../CourseDetails/CourseDetails';
 import { CoursesWithProgressList } from '../../progress';
+import RecommendedCourses from '../../components/RecommendedCourses';
 import { useScreenSize } from '../../../hooks/useScreenSize';
 import { sanitizeHtml } from '../../../util/sanitizeHtml';
 import { buildAssetUrl } from '../../../util/assetUrl';
@@ -340,6 +341,7 @@ const LearningPathDetailPage = () => {
                       onCourseClick={handleCourseViewButton}
                     />
                   )}
+                  <RecommendedCourses />
                 </section>
               </Collapsible>
 
@@ -388,6 +390,7 @@ const LearningPathDetailPage = () => {
                         onCourseClick={handleCourseViewButton}
                       />
                     )}
+                    <RecommendedCourses />
                   </section>
                 </div>
               )}

@@ -5,7 +5,7 @@ import {
   Card, Button, ProgressBar, Chip, Icon, Alert,
 } from '@openedx/paragon';
 import {
-  LmsBook,
+  School,
   AccessTime,
   CheckCircle,
   LmsCompletionSolid,
@@ -134,7 +134,7 @@ export const CourseCard = ({
         />
         <Card.Body className="d-flex flex-column">
           <Card.Section className="pb-2.5 d-flex flex-grow-0 justify-content-between chip-section">
-            <Chip iconBefore={LmsBook} className="border-0 p-0 course-chip">COURSE</Chip>
+            <Chip iconBefore={School} className="border-0 p-0 course-chip">COURSE</Chip>
             {!!statusVariant && (
               <Chip iconBefore={statusIcon} className={`pl-1 status-chip status-${statusVariant}`}>
                 {normalizedStatus.toUpperCase() || 'UNKNOWN'}

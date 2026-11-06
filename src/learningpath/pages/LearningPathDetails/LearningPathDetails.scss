@@ -158,6 +158,22 @@
         padding: 1rem;
       }
     }
+
+    .learning-path-recommended-courses {
+      margin-top: var(--pgn-spacing-spacer-6);
+
+      &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--pgn-spacing-spacer-3);
+        margin-bottom: var(--pgn-spacing-spacer-4);
+      }
+
+      h2 {
+        margin-bottom: 0;
+      }
+    }
   }
 
   @media (max-width: 767.98px) {
